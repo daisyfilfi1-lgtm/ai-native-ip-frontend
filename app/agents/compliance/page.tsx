@@ -49,7 +49,7 @@ export default function ComplianceAgentPage() {
               <div className="space-y-4">
                 <Textarea
                   placeholder="粘贴需要审查的文案内容..."
-                  rows={10}
+                  className="min-h-[240px]"
                 />
                 <Button className="w-full" leftIcon={<Shield className="w-4 h-4" />}>
                   开始审查
