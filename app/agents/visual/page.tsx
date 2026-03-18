@@ -68,7 +68,7 @@ export default function VisualAgentPage() {
               <div className="space-y-4">
                 <Textarea
                   placeholder="输入口播文案..."
-                  rows={6}
+                  className="min-h-[150px]"
                 />
                 <Select
                   label="语速"
@@ -97,7 +97,7 @@ export default function VisualAgentPage() {
             <div className="space-y-4">
               <Textarea
                 placeholder="输入文案内容..."
-                rows={4}
+                className="min-h-[100px]"
               />
               <Button className="w-full">生成分镜</Button>
               

@@ -187,7 +187,7 @@ export default function GenerationAgentPage() {
               <div className="space-y-4">
                 <Textarea
                   placeholder="例如：创业者如何度过低谷期..."
-                  rows={6}
+                  className="min-h-[150px]"
                 />
                 <Button className="w-full" leftIcon={<Wand2 className="w-4 h-4" />}>
                   生成文案
