@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils';
 import { forwardRef, HTMLAttributes } from 'react';
 
-type BadgeVariant = 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info';
+type BadgeVariant = 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
 type BadgeSize = 'sm' | 'md';
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
@@ -17,6 +17,7 @@ const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
     const variants: Record<BadgeVariant, string> = {
       default: 'bg-background-elevated text-foreground-secondary border-border',
       primary: 'bg-primary-500/10 text-primary-400 border-primary-500/20',
+      secondary: 'bg-background-tertiary text-foreground border-border',
       success: 'bg-accent-green/10 text-accent-green border-accent-green/20',
       warning: 'bg-accent-yellow/10 text-accent-yellow border-accent-yellow/20',
       danger: 'bg-accent-red/10 text-accent-red border-accent-red/20',
@@ -31,6 +32,7 @@ const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
     const dotColors: Record<BadgeVariant, string> = {
       default: 'bg-foreground-secondary',
       primary: 'bg-primary-400',
+      secondary: 'bg-foreground-tertiary',
       success: 'bg-accent-green',
       warning: 'bg-accent-yellow',
       danger: 'bg-accent-red',
