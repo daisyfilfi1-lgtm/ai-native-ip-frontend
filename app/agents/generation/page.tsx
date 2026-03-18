@@ -118,7 +118,7 @@ export default function GenerationAgentPage() {
                 ].map((item, index) => (
                   <div key={index} className="flex items-center justify-between p-3 rounded-xl bg-background-tertiary">
                     <div className="flex items-center gap-3">
-                      <span className="text-foreground">"{item.phrase}"</span>
+                      <span className="text-foreground">&ldquo;{item.phrase}&rdquo;</span>
                       <Badge variant="default" size="sm">{item.frequency}</Badge>
                     </div>
                     <Button variant="ghost" size="sm" leftIcon={<Trash2 className="w-4 h-4" />} />
@@ -245,7 +245,7 @@ export default function GenerationAgentPage() {
                   />
                 </div>
                 <p className="text-xs text-foreground-tertiary">
-                  自动插入"呃""那个"等口语词，打破对仗工整
+                  自动插入&ldquo;呃&rdquo;&ldquo;那个&rdquo;等口语词，打破对仗工整
                 </p>
               </div>
             </Card>
