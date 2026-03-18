@@ -68,6 +68,9 @@ export function getRelativeTime(date: string | Date): string {
   return '刚刚';
 }
 
+// Alias for backward compatibility
+export const formatRelativeTime = getRelativeTime;
+
 export function debounce<T extends (...args: any[]) => void>(
   fn: T,
   delay: number
