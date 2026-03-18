@@ -159,13 +159,13 @@ export default function ComplianceAgentPage() {
             {[
               { name: '抖音', rules: ['禁止站外引流', '禁说微信', '禁用极限词'], icon: '🎵' },
               { name: '视频号', rules: ['禁过度营销', '禁医疗绝对词', '禁金融诱导'], icon: '📺' },
-              { name: '小红书', rule: ['禁站外导流', '禁最低价', '禁虚假宣传'], icon: '📕' },
+              { name: '小红书', rules: ['禁站外导流', '禁最低价', '禁虚假宣传'], icon: '📕' },
               { name: '快手', rules: ['禁低俗内容', '禁恶意炒作', '禁虚假承诺'], icon: '⚡' },
             ].map((platform) => (
               <Card key={platform.name}>
                 <CardHeader title={`${platform.icon} ${platform.name}`} />
                 <div className="space-y-2">
-                  {platform.rules.map((rule, idx) => (
+                  {platform.rules?.map((rule, idx) => (
                     <div key={idx} className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-accent-red" />
                       <span className="text-sm text-foreground-secondary">{rule}</span>
