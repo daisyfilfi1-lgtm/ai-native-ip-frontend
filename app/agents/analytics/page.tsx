@@ -19,31 +19,29 @@ import {
 
 export default function AnalyticsAgentPage() {
   return (
-    <MainLayout title="分析Agent - 配置">
-      {/* Agent header */}
+    <MainLayout title="Analytics Agent">
       <div className="mb-6 p-6 rounded-2xl bg-gradient-to-r from-purple-500/10 to-cyan-600/10 border border-purple-500/20">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-cyan-600 flex items-center justify-center text-2xl">
             📊
           </div>
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-foreground">分析Agent</h2>
-            <p className="text-foreground-secondary">自动化数据归因与策略迭代，生成周报</p>
+            <h2 className="text-xl font-bold text-foreground">Analytics Agent</h2>
+            <p className="text-foreground-secondary">Automated data attribution and strategy iteration</p>
           </div>
-          <Badge variant="default" dot>未启动</Badge>
+          <Badge variant="default" dot>Not Started</Badge>
         </div>
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
         <TabsList>
-          <TabsTrigger value="overview">数据概览</TabsTrigger>
-          <TabsTrigger value="attribution">智能归因</TabsTrigger>
-          <TabsTrigger value="reports">自动周报</TabsTrigger>
-          <TabsTrigger value="config">分析配置</TabsTrigger>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="attribution">Attribution</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="config">Config</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
-          {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <Card>
               <div className="flex items-center gap-3">
@@ -51,7 +49,7 @@ export default function AnalyticsAgentPage() {
                   <Eye className="w-5 h-5 text-primary-400" />
                 </div>
                 <div>
-                  <p className="text-2xs text-foreground-tertiary uppercase">总播放量</p>
+                  <p className="text-2xs text-foreground-tertiary uppercase">Total Views</p>
                   <p className="text-xl font-bold text-foreground">128.5K</p>
                 </div>
               </div>
@@ -62,7 +60,7 @@ export default function AnalyticsAgentPage() {
                   <Heart className="w-5 h-5 text-accent-pink" />
                 </div>
                 <div>
-                  <p className="text-2xs text-foreground-tertiary uppercase">点赞数</p>
+                  <p className="text-2xs text-foreground-tertiary uppercase">Likes</p>
                   <p className="text-xl font-bold text-foreground">8.2K</p>
                 </div>
               </div>
@@ -73,7 +71,7 @@ export default function AnalyticsAgentPage() {
                   <MessageCircle className="w-5 h-5 text-accent-cyan" />
                 </div>
                 <div>
-                  <p className="text-2xs text-foreground-tertiary uppercase">评论数</p>
+                  <p className="text-2xs text-foreground-tertiary uppercase">Comments</p>
                   <p className="text-xl font-bold text-foreground">1.5K</p>
                 </div>
               </div>
@@ -84,23 +82,19 @@ export default function AnalyticsAgentPage() {
                   <Share2 className="w-5 h-5 text-accent-green" />
                 </div>
                 <div>
-                  <p className="text-2xs text-foreground-tertiary uppercase">分享数</p>
+                  <p className="text-2xs text-foreground-tertiary uppercase">Shares</p>
                   <p className="text-xl font-bold text-foreground">856</p>
                 </div>
               </div>
             </Card>
           </div>
 
-          {/* Performance Chart Placeholder */}
           <Card>
-            <CardHeader 
-              title="播放趋势" 
-              description="近7天播放量变化"
-            />
+            <CardHeader title="Trends" description="Last 7 days views" />
             <div className="h-64 flex items-center justify-center bg-background-tertiary rounded-xl">
               <div className="text-center">
                 <BarChart3 className="w-12 h-12 mx-auto mb-2 text-foreground-tertiary" />
-                <p className="text-sm text-foreground-secondary">数据图表将在此显示</p>
+                <p className="text-sm text-foreground-secondary">Chart will be displayed here</p>
               </div>
             </div>
           </Card>
@@ -109,29 +103,25 @@ export default function AnalyticsAgentPage() {
         <TabsContent value="attribution">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
-              <CardHeader title="爆款归因" description="分析S级内容的成功因素" />
+              <CardHeader title="Success Factors" description="What makes content successful" />
               <div className="space-y-4">
                 <div className="p-4 rounded-xl bg-accent-green/10 border border-accent-green/20">
                   <div className="flex items-center gap-2 mb-2">
                     <TrendingUp className="w-5 h-5 text-accent-green" />
-                    <span className="font-medium text-accent-green">成功因素分析</span>
+                    <span className="font-medium text-accent-green">Analysis</span>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-foreground">选题吸引力</span>
+                      <span className="text-sm text-foreground">Topic Appeal</span>
                       <Badge variant="success" size="sm">35%</Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-foreground">开头3秒</span>
+                      <span className="text-sm text-foreground">First 3s Hook</span>
                       <Badge variant="success" size="sm">25%</Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-foreground">内容质量</span>
+                      <span className="text-sm text-foreground">Content Quality</span>
                       <Badge variant="success" size="sm">20%</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-foreground">投放策略</span>
-                      <Badge variant="success" size="sm">10%</Badge>
                     </div>
                   </div>
                 </div>
@@ -139,17 +129,17 @@ export default function AnalyticsAgentPage() {
             </Card>
 
             <Card>
-              <CardHeader title="失败归因" description="分析低表现内容的原因" />
+              <CardHeader title="Improvement Suggestions" description="How to improve low-performing content" />
               <div className="space-y-4">
                 <div className="p-4 rounded-xl bg-accent-red/10 border border-accent-red/20">
                   <div className="flex items-center gap-2 mb-2">
                     <TrendingDown className="w-5 h-5 text-accent-red" />
-                    <span className="font-medium text-accent-red">改进建议</span>
+                    <span className="font-medium text-accent-red">Suggestions</span>
                   </div>
                   <ul className="space-y-2 text-sm text-foreground-secondary">
-                    <li>• 开头钩子不够吸引，建议参考爆款模板</li>
-                    <li>• 视频时长过长，建议控制在45秒内</li>
-                    <li>• 情绪曲线太平，建议增加转折</li>
+                    <li>Improve the opening hook to grab attention</li>
+                    <li>Keep video length under 45 seconds</li>
+                    <li>Add more emotional turning points</li>
                   </ul>
                 </div>
               </div>
@@ -160,25 +150,25 @@ export default function AnalyticsAgentPage() {
         <TabsContent value="reports">
           <Card>
             <CardHeader 
-              title="周报历史" 
-              description="自动生成的数据复盘报告"
-              action={<Button size="sm" leftIcon={<Download className="w-4 h-4" />}>导出</Button>}
+              title="Weekly Reports" 
+              description="Automated data analysis reports"
+              action={<Button size="sm" leftIcon={<Download className="w-4 h-4" />}>Export</Button>}
             />
             <div className="space-y-3">
               {[
-                { week: '2026年第11周', date: '2026-03-10', status: 'generated', views: '125K' },
-                { week: '2026年第10周', date: '2026-03-03', status: 'generated', views: '98K' },
-                { week: '2026年第9周', date: '2026-02-24', status: 'generated', views: '86K' },
+                { week: 'Week 11, 2026', date: '2026-03-10', views: '125K' },
+                { week: 'Week 10, 2026', date: '2026-03-03', views: '98K' },
+                { week: 'Week 9, 2026', date: '2026-02-24', views: '86K' },
               ].map((report, index) => (
                 <div key={index} className="flex items-center justify-between p-4 rounded-xl bg-background-tertiary">
                   <div>
                     <h4 className="font-medium text-foreground">{report.week}</h4>
-                    <p className="text-xs text-foreground-tertiary">生成时间: {report.date}</p>
+                    <p className="text-xs text-foreground-tertiary">Generated: {report.date}</p>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className="text-sm text-foreground-secondary">播放量: {report.views}</span>
-                    <Badge variant="success" size="sm">已生成</Badge>
-                    <Button variant="ghost" size="sm">查看</Button>
+                    <span className="text-sm text-foreground-secondary">Views: {report.views}</span>
+                    <Badge variant="success" size="sm">Generated</Badge>
+                    <Button variant="ghost" size="sm">View</Button>
                   </div>
                 </div>
               ))}
@@ -189,77 +179,32 @@ export default function AnalyticsAgentPage() {
         <TabsContent value="config">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
-              <CardHeader title="爆款定义" description="什么算爆款" />
+              <CardHeader title="Viral Definition" description="What counts as viral" />
               <div className="space-y-4">
                 <Select
-                  label="播放量阈值"
+                  label="View Threshold"
                   options={[
-                    { value: '10w', label: '> 10万' },
-                    { value: 'fans3x', label: '> 粉丝数 × 3' },
-                    { value: 'custom', label: '自定义' },
-                  ]}
-                />
-                <Select
-                  label="互动率阈值"
-                  options={[
-                    { value: '5', label: '> 5%' },
-                    { value: '8', label: '> 8%' },
-                    { value: '10', label: '> 10%' },
+                    { value: '10w', label: '> 100K' },
+                    { value: 'fans3x', label: '> Fans x 3' },
+                    { value: 'custom', label: 'Custom' },
                   ]}
                 />
               </div>
             </Card>
 
             <Card>
-              <CardHeader title="周报配置" description="报告详细程度" />
-              <div className="space-y-4">
-                <Select
-                  label="报告模板"
-                  options={[
-                    { value: 'minimal', label: '极简版（1页）' },
-                    { value: 'standard', label: '标准版（5页）' },
-                    { value: 'detailed', label: '详细版（10页）' },
-                  ]}
-                />
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <div className="relative">
-                    <input type="checkbox" className="sr-only peer" defaultChecked />
-                    <div className="w-11 h-6 rounded-full bg-background-elevated peer-checked:bg-primary-500 transition-colors" />
-                    <div className="absolute left-1 top-1 w-4 h-4 rounded-full bg-white transition-transform peer-checked:translate-x-5" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-foreground">自动导出到飞书</span>
-                  </div>
-                </label>
-              </div>
-            </Card>
-
-            <Card>
-              <CardHeader title="预警阈值" description="异常自动提醒" />
+              <CardHeader title="Alert Thresholds" description="When to send alerts" />
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-foreground">CPA 告警</span>
-                    <span className="text-sm font-medium text-foreground">> ¥100</span>
+                    <span className="text-sm text-foreground">CPA Alert</span>
+                    <span className="text-sm font-medium text-foreground">{'> ¥100'}</span>
                   </div>
                   <input
                     type="range"
                     min="50"
                     max="500"
                     defaultValue="100"
-                    className="w-full h-2 bg-background-elevated rounded-lg appearance-none cursor-pointer accent-primary-500"
-                  />
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-foreground">爆款率告警</span>
-                    <span className="text-sm font-medium text-foreground">< 10%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="5"
-                    max="30"
-                    defaultValue="10"
                     className="w-full h-2 bg-background-elevated rounded-lg appearance-none cursor-pointer accent-primary-500"
                   />
                 </div>
