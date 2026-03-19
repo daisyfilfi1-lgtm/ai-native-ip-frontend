@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { api } from '@/lib/api';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Textarea } from '@/components/ui/Input';
@@ -28,6 +29,7 @@ import {
   BookOpen,
   AlertCircle
 } from 'lucide-react';
+import type { FeishuSpaceItem } from '@/types';
 import { IngestRequest, RetrieveRequest } from '@/types';
 
 // Mock data
@@ -43,6 +45,18 @@ export default function MemoryAgentPage() {
   const [ingestProgress, setIngestProgress] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
+
+  // Feishu: 凭证与同步
+  const [feishuAppId, setFeishuAppId] = useState('');
+  const [feishuAppSecret, setFeishuAppSecret] = useState('');
+  const [feishuConfigSaved, setFeishuConfigSaved] = useState(false);
+  const [feishuSaving, setFeishuSaving] = useState(false);
+  const [feishuSpaces, setFeishuSpaces] = useState<FeishuSpaceItem[]>([]);
+  const [feishuSpacesLoading, setFeishuSpacesLoading] = useState(false);
+  const [feishuSpaceId, setFeishuSpaceId] = useState('');
+  const [feishuIpId, setFeishuIpId] = useState('');
+  const [feishuSyncing, setFeishuSyncing] = useState(false);
+  const [feishuSyncResult, setFeishuSyncResult] = useState<{ synced: number; failed: number; errors: string[] } | null>(null);
 
   const handleIngest = async () => {
     setIsIngesting(true);
@@ -66,6 +80,57 @@ export default function MemoryAgentPage() {
     setSearchResults(mockAssets);
   };
 
+  // 飞书：进入 tab 时拉取配置与空间列表
+  useEffect(() => {
+    if (activeTab !== 'feishu') return;
+    (async () => {
+      try {
+        const config = await api.getFeishuConfig();
+        setFeishuConfigSaved(config.configured);
+        if (config.configured) {
+          setFeishuSpacesLoading(true);
+          const { items } = await api.getFeishuSpaces();
+          setFeishuSpaces(items);
+        } else {
+          setFeishuSpaces([]);
+        }
+      } catch {
+        setFeishuSpaces([]);
+      } finally {
+        setFeishuSpacesLoading(false);
+      }
+    })();
+  }, [activeTab, feishuConfigSaved]);
+
+  const handleSaveFeishuConfig = async () => {
+    if (!feishuAppId.trim() || !feishuAppSecret.trim()) return;
+    setFeishuSaving(true);
+    try {
+      await api.saveFeishuConfig({ app_id: feishuAppId.trim(), app_secret: feishuAppSecret.trim() });
+      setFeishuConfigSaved(true);
+      const { items } = await api.getFeishuSpaces();
+      setFeishuSpaces(items);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setFeishuSaving(false);
+    }
+  };
+
+  const handleFeishuSync = async () => {
+    if (!feishuIpId.trim()) return;
+    setFeishuSyncing(true);
+    setFeishuSyncResult(null);
+    try {
+      const result = await api.syncFeishu(feishuIpId.trim(), feishuSpaceId || undefined);
+      setFeishuSyncResult(result);
+    } catch (e) {
+      setFeishuSyncResult({ synced: 0, failed: 0, errors: [(e as Error).message] });
+    } finally {
+      setFeishuSyncing(false);
+    }
+  };
+
   return (
     <MainLayout title="记忆Agent - 配置">
       {/* Agent header */}
@@ -82,7 +147,7 @@ export default function MemoryAgentPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="ingest" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList>
           <TabsTrigger value="ingest">素材录入</TabsTrigger>
           <TabsTrigger value="feishu">飞书同步</TabsTrigger>
@@ -329,6 +394,41 @@ export default function MemoryAgentPage() {
         {/* Feishu Sync Tab */}
         <TabsContent value="feishu">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* 飞书应用凭证：管理后台填写后保存到后端 */}
+            <Card className="lg:col-span-2">
+              <CardHeader 
+                title="飞书应用凭证" 
+                description="填写后在下方选择知识空间并同步，凭证仅保存在本系统不会提交给飞书以外的服务"
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="App ID"
+                  placeholder="飞书开放平台应用的 App ID"
+                  value={feishuAppId}
+                  onChange={(e) => setFeishuAppId(e.target.value)}
+                />
+                <Input
+                  label="App Secret"
+                  type="password"
+                  placeholder="飞书开放平台应用的 App Secret"
+                  value={feishuAppSecret}
+                  onChange={(e) => setFeishuAppSecret(e.target.value)}
+                />
+              </div>
+              <div className="mt-4 flex items-center gap-3">
+                <Button
+                  onClick={handleSaveFeishuConfig}
+                  disabled={feishuSaving || !feishuAppId.trim() || !feishuAppSecret.trim()}
+                  leftIcon={feishuSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : undefined}
+                >
+                  {feishuSaving ? '保存中...' : '保存凭证'}
+                </Button>
+                {feishuConfigSaved && (
+                  <Badge variant="success" size="sm">已配置</Badge>
+                )}
+              </div>
+            </Card>
+
             <Card>
               <CardHeader 
                 title="飞书知识库同步" 
@@ -347,10 +447,11 @@ export default function MemoryAgentPage() {
                   </div>
                   <Select
                     label="选择知识空间"
+                    value={feishuSpaceId}
+                    onChange={(e) => setFeishuSpaceId(e.target.value)}
                     options={[
-                      { value: '', label: '加载中...' },
-                      { value: 'space_001', label: 'IP内容知识库' },
-                      { value: 'space_002', label: '产品文档中心' },
+                      { value: '', label: feishuSpacesLoading ? '加载中...' : (feishuSpaces.length ? '请选择' : '请先保存凭证') },
+                      ...feishuSpaces.map((s) => ({ value: s.space_id, label: s.name || s.space_id })),
                     ]}
                   />
                 </div>
@@ -359,6 +460,8 @@ export default function MemoryAgentPage() {
                   label="目标 IP ID"
                   placeholder="例如：zhangkai_001"
                   helper="同步的文档将归属到该IP的素材库"
+                  value={feishuIpId}
+                  onChange={(e) => setFeishuIpId(e.target.value)}
                 />
 
                 <div className="p-3 rounded-lg bg-accent-yellow/10 border border-accent-yellow/20">
@@ -370,38 +473,39 @@ export default function MemoryAgentPage() {
                   </div>
                 </div>
 
-                <Button className="w-full" leftIcon={<RefreshCw className="w-4 h-4" />}>
-                  开始同步
+                {feishuSyncResult && (
+                  <div className="p-3 rounded-lg bg-background-tertiary text-sm">
+                    <p className="text-foreground">同步结果：成功 {feishuSyncResult.synced} 篇，失败 {feishuSyncResult.failed} 篇</p>
+                    {feishuSyncResult.errors.length > 0 && (
+                      <ul className="mt-1 text-foreground-tertiary text-xs list-disc list-inside">
+                        {feishuSyncResult.errors.slice(0, 5).map((err, i) => (
+                          <li key={i}>{err}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+
+                <Button
+                  className="w-full"
+                  leftIcon={feishuSyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                  onClick={handleFeishuSync}
+                  disabled={feishuSyncing || !feishuIpId.trim()}
+                >
+                  {feishuSyncing ? '同步中...' : '开始同步'}
                 </Button>
               </div>
             </Card>
 
             <Card>
               <CardHeader 
-                title="同步记录" 
-                description="最近同步历史"
+                title="同步说明" 
+                description="使用步骤"
               />
-              <div className="space-y-3">
-                {[
-                  { time: '2026-03-18 10:30', status: 'success', count: 15, space: 'IP内容知识库' },
-                  { time: '2026-03-17 16:45', status: 'success', count: 8, space: '产品文档中心' },
-                  { time: '2026-03-16 09:20', status: 'failed', count: 0, space: 'IP内容知识库' },
-                ].map((record, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 rounded-xl bg-background-tertiary">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-foreground">{record.space}</p>
-                        <Badge variant={record.status === 'success' ? 'success' : 'danger'} size="sm">
-                          {record.status === 'success' ? '成功' : '失败'}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-foreground-tertiary mt-1">{record.time}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-foreground">{record.count} 篇</p>
-                    </div>
-                  </div>
-                ))}
+              <div className="space-y-3 text-sm text-foreground-secondary">
+                <p>1. 在上方填写飞书开放平台的 App ID、App Secret 并保存</p>
+                <p>2. 选择要同步的知识空间（需应用已加入该知识库成员）</p>
+                <p>3. 填写目标 IP ID（需已在本系统创建），点击开始同步</p>
               </div>
             </Card>
 
@@ -434,12 +538,9 @@ export default function MemoryAgentPage() {
                     <p className="text-xs">将应用添加为知识库成员，确保有读取权限</p>
                   </div>
                 </div>
-                <div className="p-3 rounded-lg bg-background-tertiary">
-                  <p className="text-xs">
-                    <span className="text-foreground font-medium">环境变量：</span>
-                    在 Railway 或本地 .env 中配置 FEISHU_APP_ID 和 FEISHU_APP_SECRET
-                  </p>
-                </div>
+                <p className="text-xs text-foreground-tertiary">
+                  凭证可在本页「飞书应用凭证」中填写保存；也可在服务端环境变量中配置 FEISHU_APP_ID、FEISHU_APP_SECRET（管理后台填写优先）。
+                </p>
               </div>
             </Card>
           </div>

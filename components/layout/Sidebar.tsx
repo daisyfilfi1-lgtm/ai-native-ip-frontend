@@ -13,6 +13,7 @@ import {
   Video, 
   BarChart3, 
   Settings,
+  Cloud,
   Sparkles
 } from 'lucide-react';
 
@@ -33,7 +34,15 @@ const navigation = [
       { name: '分析Agent', href: '/agents/analytics', icon: BarChart3 },
     ]
   },
-  { name: '配置中心', href: '/config', icon: Settings },
+  { 
+    name: '配置中心', 
+    href: '/config', 
+    icon: Settings,
+    children: [
+      { name: '通用设置', href: '/config', icon: Settings },
+      { name: '集成配置', href: '/config/integrations', icon: Cloud },
+    ]
+  },
 ];
 
 interface SidebarProps {

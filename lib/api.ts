@@ -3,7 +3,8 @@ import type {
   IP, CreateIPRequest, 
   IngestRequest, IngestResponse, IngestStatus,
   RetrieveRequest, RetrieveResult,
-  MemoryFullConfig 
+  MemoryFullConfig,
+  FeishuConfig, FeishuConfigSave, FeishuSpaceItem, FeishuSyncResult,
 } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
@@ -66,6 +67,30 @@ class ApiClient {
 
   async saveMemoryConfig(data: MemoryFullConfig): Promise<{ success: boolean; version: number }> {
     const response = await this.client.post<{ success: boolean; version: number }>('/config/memory', data);
+    return response.data;
+  }
+
+  // Feishu integration
+  async getFeishuConfig(): Promise<FeishuConfig> {
+    const response = await this.client.get<FeishuConfig>('/integrations/feishu/config');
+    return response.data;
+  }
+
+  async saveFeishuConfig(data: FeishuConfigSave): Promise<{ success: boolean }> {
+    const response = await this.client.post<{ success: boolean }>('/integrations/feishu/config', data);
+    return response.data;
+  }
+
+  async getFeishuSpaces(): Promise<{ items: FeishuSpaceItem[] }> {
+    const response = await this.client.get<{ items: FeishuSpaceItem[] }>('/integrations/feishu/spaces');
+    return response.data;
+  }
+
+  async syncFeishu(ipId: string, spaceId?: string): Promise<FeishuSyncResult> {
+    const response = await this.client.post<FeishuSyncResult>('/integrations/feishu/sync', {
+      ip_id: ipId,
+      space_id: spaceId || undefined,
+    });
     return response.data;
   }
 }

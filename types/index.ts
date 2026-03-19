@@ -143,3 +143,27 @@ export interface WorkflowStatus {
   endTime?: string;
   agent?: string;
 }
+
+// Feishu integration
+export interface FeishuConfig {
+  configured: boolean;
+  app_id: string;
+  has_secret: boolean;
+}
+
+export interface FeishuConfigSave {
+  app_id: string;
+  app_secret: string;
+}
+
+export interface FeishuSpaceItem {
+  space_id: string;
+  name?: string;
+  description?: string;
+}
+
+export interface FeishuSyncResult {
+  synced: number;
+  failed: number;
+  errors: string[];
+}
