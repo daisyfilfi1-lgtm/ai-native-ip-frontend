@@ -8,58 +8,67 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { creatorApi } from '@/lib/api/creator';
-import type { GeneratedContent, StyleType, ComplianceResult, PlatformRule } from '@/types/creator';
-import type { LucideIcon } from 'lucide-react';
+import type { GeneratedContent, StyleType } from '@/types/creator';
 import { 
   Sparkles, 
   CheckCircle2, 
   AlertCircle,
   Edit3,
   Save,
-  Play,
   RefreshCw,
-  Zap,
-  Flame,
-  Smile,
   ArrowLeft,
   Copy,
-  Send
+  Send,
+  Loader2,
+  Check,
+  FileText,
+  Library
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface SectionConfig {
   title: string;
   color: string;
+  description: string;
 }
 
-interface SectionData {
-  content: string;
-  source?: string;
-}
-
-interface ContentSections {
-  hook: SectionData;
-  story: SectionData;
-  opinion: SectionData;
-  cta: SectionData;
-}
-
-const styles: { value: StyleType; label: string; emoji: string; color: string }[] = [
-  { value: 'angry', label: '愤怒', emoji: '🔥', color: 'from-red-500 to-orange-500' },
-  { value: 'calm', label: '冷静', emoji: '😌', color: 'from-blue-500 to-cyan-500' },
-  { value: 'humor', label: '幽默', emoji: '😄', color: 'from-yellow-500 to-amber-500' },
+const styles: { value: StyleType; label: string; emoji: string; color: string; desc: string }[] = [
+  { value: 'angry', label: '愤怒', emoji: '🔥', color: 'from-red-500 to-orange-500', desc: '直击痛点，情绪爆发' },
+  { value: 'calm', label: '冷静', emoji: '😌', color: 'from-blue-500 to-cyan-500', desc: '理性分析，建立专业' },
+  { value: 'humor', label: '幽默', emoji: '😄', color: 'from-yellow-500 to-amber-500', desc: '轻松有趣，拉近距离' },
 ];
 
 const sectionLabels: Record<string, SectionConfig> = {
-  hook: { title: '钩子', color: 'text-accent-pink' },
-  story: { title: '故事', color: 'text-accent-cyan' },
-  opinion: { title: '观点', color: 'text-primary-400' },
-  cta: { title: '行动指令', color: 'text-accent-green' },
+  hook: { 
+    title: '钩子', 
+    color: 'text-accent-pink',
+    description: '黄金3秒，抓住注意力'
+  },
+  story: { 
+    title: '故事', 
+    color: 'text-accent-cyan',
+    description: '真实案例，引发共鸣'
+  },
+  opinion: { 
+    title: '观点', 
+    color: 'text-primary-400',
+    description: '核心干货，建立专业'
+  },
+  cta: { 
+    title: '行动指令', 
+    color: 'text-accent-green',
+    description: '引导互动，促进转化'
+  },
 };
 
 function GeneratePageContent() {
   const searchParams = useSearchParams();
-  const topicId = searchParams.get('topic');
+  const router = useRouter();
+  
+  // 从URL获取参数：id(生成ID) 和 type(生成类型: topic/remix/voice)
+  const id = searchParams.get('id');
+  const type = searchParams.get('type') as 'topic' | 'remix' | 'voice' | null;
   
   const [currentStyle, setCurrentStyle] = useState<StyleType>('angry');
   const [isGenerating, setIsGenerating] = useState(true);
@@ -68,39 +77,88 @@ function GeneratePageContent() {
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editedContent, setEditedContent] = useState<Record<string, string>>({});
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // 加载生成内容
+  useEffect(() => {
+    if (id) {
+      loadContent();
+    } else {
+      // 如果没有ID，显示错误
+      setError('无效的生成请求');
+      setIsGenerating(false);
+    }
+  }, [id]);
 
   // 生成动画
   useEffect(() => {
-    if (isGenerating) {
+    if (isGenerating && progress < 100) {
       const interval = setInterval(() => {
         setProgress(prev => {
-          if (prev >= 100) {
+          const increment = Math.random() * 15 + 5; // 5-20%的增量
+          const newProgress = Math.min(prev + increment, 95);
+          if (newProgress >= 95) {
             clearInterval(interval);
-            loadContent();
-            return 100;
           }
-          return prev + 2;
+          return newProgress;
         });
-      }, 100);
+      }, 300);
       return () => clearInterval(interval);
     }
-  }, [isGenerating]);
+  }, [isGenerating, progress]);
 
   const loadContent = async () => {
     try {
-      const data: GeneratedContent = await creatorApi.getGeneratedContent(topicId || 'topic_001');
-      setContent(data);
+      setIsGenerating(true);
+      setProgress(0);
+      setError(null);
+      
+      // 调用API获取生成内容
+      const data = await creatorApi.getGeneratedContent(id!);
+      
+      // 设置当前风格
+      if (data.style) {
+        setCurrentStyle(data.style);
+      }
+      
+      // 延迟显示结果，让用户看到动画
+      setTimeout(() => {
+        setProgress(100);
+        setContent(data);
+        setIsGenerating(false);
+      }, 1500);
+      
+    } catch (err) {
+      console.error('Failed to load content:', err);
+      setError('生成内容加载失败，请重试');
       setIsGenerating(false);
-    } catch (error) {
-      console.error('Failed to load content:', error);
     }
   };
 
   const handleStyleChange = async (style: StyleType) => {
+    if (style === currentStyle) return;
+    
     setCurrentStyle(style);
     setIsGenerating(true);
     setProgress(0);
     setContent(null);
+    
+    // 使用当前ID重新生成
+    try {
+      const data = await creatorApi.getGeneratedContent(id!);
+      setTimeout(() => {
+        setProgress(100);
+        setContent({
+          ...data,
+          style
+        });
+        setIsGenerating(false);
+      }, 1500);
+    } catch (err) {
+      setError('切换风格失败');
+      setIsGenerating(false);
+    }
   };
 
   const getSectionContent = (key: string): string => {
@@ -115,9 +173,9 @@ function GeneratePageContent() {
   };
 
   const getSectionSource = (key: string): string | undefined => {
-    if (!content || !content.sourceTracing) return undefined;
+    if (!content?.sourceTracing) return undefined;
     const trace = content.sourceTracing.find(t => t.section === key);
-    return trace ? `素材_${trace.sourceId}` : undefined;
+    return trace ? `素材_${trace.sourceId} (${trace.matchScore}%)` : undefined;
   };
 
   const handleEdit = (sectionKey: string) => {
@@ -136,28 +194,64 @@ function GeneratePageContent() {
     setEditingSection(null);
   };
 
-  const handlePublish = async () => {
-    setIsPublishing(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsPublishing(false);
-    alert('内容已提交审核！');
+  const handleCopy = () => {
+    if (!content) return;
+    const fullText = [content.hook, content.story, content.opinion, content.cta].join('\n\n');
+    navigator.clipboard.writeText(fullText);
+    // 显示复制成功提示
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 bg-accent-green text-white px-4 py-2 rounded-lg shadow-lg z-50';
+    toast.textContent = '已复制到剪贴板';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2000);
   };
 
-  const getComplianceStatus = (compliance: ComplianceResult): { passed: boolean; label: string } => {
+  const handleSaveDraft = () => {
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2000);
+  };
+
+  const handlePublish = async () => {
+    setIsPublishing(true);
+    try {
+      await creatorApi.publishContent(content?.id || '', ['douyin']);
+      // 跳转到内容库
+      router.push('/creator/library');
+    } catch (err) {
+      setError('发布失败，请重试');
+      setIsPublishing(false);
+    }
+  };
+
+  const getComplianceStatus = () => {
+    if (!content?.compliance) return { passed: false, label: '未知', color: 'gray' };
+    const { compliance } = content;
     const allPassed = compliance.platformChecks.douyin === 'passed' && 
                       compliance.platformChecks.xiaohongshu === 'passed';
     return {
       passed: allPassed,
-      label: allPassed ? '通过' : '需修改'
+      label: allPassed ? '已通过' : '需修改',
+      color: allPassed ? 'green' : 'yellow'
     };
   };
 
-  const sections: ContentSections = content ? {
-    hook: { content: content.hook, source: getSectionSource('hook') },
-    story: { content: content.story, source: getSectionSource('story') },
-    opinion: { content: content.opinion, source: getSectionSource('opinion') },
-    cta: { content: content.cta, source: getSectionSource('cta') },
-  } : { hook: { content: '' }, story: { content: '' }, opinion: { content: '' }, cta: { content: '' } };
+  if (error) {
+    return (
+      <CreatorLayout>
+        <div className="flex flex-col items-center justify-center py-20">
+          <AlertCircle className="w-16 h-16 text-accent-red mb-4" />
+          <h2 className="text-xl font-semibold text-foreground mb-2">出错了</h2>
+          <p className="text-foreground-secondary mb-6">{error}</p>
+          <div className="flex gap-3">
+            <Link href="/creator/dashboard">
+              <Button variant="secondary">返回工作台</Button>
+            </Link>
+            <Button onClick={() => loadContent()}>重新加载</Button>
+          </div>
+        </div>
+      </CreatorLayout>
+    );
+  }
 
   return (
     <CreatorLayout>
@@ -169,31 +263,45 @@ function GeneratePageContent() {
         >
           <ArrowLeft className="w-5 h-5 text-foreground-secondary" />
         </Link>
-        <div>
-          <h1 className="text-xl font-bold text-foreground">魔法生成</h1>
-          <p className="text-sm text-foreground-secondary">AI正在为你创作内容...</p>
+        <div className="flex-1">
+          <h1 className="text-xl font-bold text-foreground">
+            {isGenerating ? 'AI创作中...' : content?.title || '魔法生成'}
+          </h1>
+          <p className="text-sm text-foreground-secondary">
+            {isGenerating 
+              ? '正在调用Agent链为你生成内容...' 
+              : type === 'topic' ? '基于推荐选题生成' : type === 'remix' ? '基于竞品仿写' : '基于语音扩写'}
+          </p>
         </div>
+        {!isGenerating && content && (
+          <div className="flex items-center gap-2">
+            <Badge variant="primary" size="sm">
+              {styles.find(s => s.value === currentStyle)?.emoji} {styles.find(s => s.value === currentStyle)?.label}
+            </Badge>
+          </div>
+        )}
       </div>
 
-      {/* Style Selector */}
-      <div className="flex gap-3 mb-6">
-        {styles.map((style) => (
-          <button
-            key={style.value}
-            onClick={() => handleStyleChange(style.value)}
-            disabled={isGenerating}
-            className={cn(
-              'flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all',
-              currentStyle === style.value
-                ? `bg-gradient-to-r ${style.color} text-white shadow-lg`
-                : 'bg-background-tertiary text-foreground-secondary hover:text-foreground'
-            )}
-          >
-            <span>{style.emoji}</span>
-            <span>{style.label}</span>
-          </button>
-        ))}
-      </div>
+      {/* Style Selector - only show when not generating */}
+      {!isGenerating && content && (
+        <div className="flex gap-3 mb-6">
+          {styles.map((style) => (
+            <button
+              key={style.value}
+              onClick={() => handleStyleChange(style.value)}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all',
+                currentStyle === style.value
+                  ? `bg-gradient-to-r ${style.color} text-white shadow-lg`
+                  : 'bg-background-tertiary text-foreground-secondary hover:text-foreground'
+              )}
+            >
+              <span>{style.emoji}</span>
+              <span>{style.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Generation Animation or Content */}
       <AnimatePresence mode="wait">
@@ -227,9 +335,7 @@ function GeneratePageContent() {
                 <motion.div
                   key={i}
                   className="absolute w-3 h-3 rounded-full bg-primary-400"
-                  animate={{
-                    rotate: 360,
-                  }}
+                  animate={{ rotate: 360 }}
                   transition={{
                     duration: 3 + i,
                     repeat: Infinity,
@@ -249,12 +355,20 @@ function GeneratePageContent() {
               ))}
             </div>
 
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              AI正在创作中...
-            </h3>
-            <p className="text-sm text-foreground-secondary mb-6">
-              正在匹配你的素材库，生成符合你风格的文案
-            </p>
+            {/* Agent Chain Status */}
+            <div className="mb-6 space-y-2 text-center">
+              <p className="text-lg font-semibold text-foreground">
+                {progress < 30 ? 'Memory Agent 检索素材中...' : 
+                 progress < 60 ? 'Generation Agent 生成文案中...' :
+                 progress < 90 ? 'Compliance Agent 合规检查中...' : 
+                 '即将完成...'}
+              </p>
+              <p className="text-sm text-foreground-secondary">
+                已调用: {type === 'topic' ? 'Strategy → Memory → Generation → Compliance' : 
+                         type === 'remix' ? 'Remix → Memory → Generation → Compliance' :
+                         'ASR → Memory → Generation → Compliance'}
+              </p>
+            </div>
 
             {/* Progress Bar */}
             <div className="w-64 h-2 bg-background-tertiary rounded-full overflow-hidden">
@@ -265,7 +379,7 @@ function GeneratePageContent() {
                 transition={{ duration: 0.3 }}
               />
             </div>
-            <p className="text-xs text-foreground-tertiary mt-2">{progress}%</p>
+            <p className="text-xs text-foreground-tertiary mt-2">{Math.round(progress)}%</p>
           </motion.div>
         ) : content ? (
           <motion.div
@@ -277,7 +391,7 @@ function GeneratePageContent() {
           >
             {/* Content Editor */}
             <div className="lg:col-span-2 space-y-4">
-              {Object.entries(sections).map(([key, section], index) => (
+              {Object.entries(sectionLabels).map(([key, config], index) => (
                 <motion.div
                   key={key}
                   initial={{ opacity: 0, x: -20 }}
@@ -289,16 +403,19 @@ function GeneratePageContent() {
                       {/* Section Header */}
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <span className={cn("font-semibold", sectionLabels[key].color)}>
-                            {sectionLabels[key].title}
+                          <span className={cn("font-semibold", config.color)}>
+                            {config.title}
                           </span>
-                          {section.source && (
-                            <span className="text-xs text-foreground-tertiary">
-                              来源: {section.source}
+                          <span className="text-xs text-foreground-tertiary">
+                            {config.description}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {getSectionSource(key) && (
+                            <span className="text-xs text-foreground-tertiary bg-background-tertiary px-2 py-1 rounded">
+                              来源: {getSectionSource(key)}
                             </span>
                           )}
-                        </div>
-                        <div className="flex items-center gap-1">
                           {editingSection === key ? (
                             <Button
                               size="sm"
@@ -324,13 +441,13 @@ function GeneratePageContent() {
                       {/* Content */}
                       {editingSection === key ? (
                         <textarea
-                          value={editedContent[key] || section.content}
+                          value={editedContent[key] || getSectionContent(key)}
                           onChange={(e) => setEditedContent(prev => ({ ...prev, [key]: e.target.value }))}
                           className="w-full min-h-[100px] p-3 bg-background-tertiary rounded-lg text-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary-500/50"
                         />
                       ) : (
                         <p className="text-foreground leading-relaxed whitespace-pre-wrap">
-                          {section.content}
+                          {getSectionContent(key)}
                         </p>
                       )}
                     </div>
@@ -343,26 +460,24 @@ function GeneratePageContent() {
                 <Button
                   variant="secondary"
                   leftIcon={<Copy className="w-4 h-4" />}
-                  onClick={() => {
-                    const fullText = [content.hook, content.story, content.opinion, content.cta].join('\n\n');
-                    navigator.clipboard.writeText(fullText);
-                  }}
+                  onClick={handleCopy}
                 >
                   复制文案
                 </Button>
                 <Button
                   variant="secondary"
-                  leftIcon={<Save className="w-4 h-4" />}
+                  leftIcon={isSaved ? <Check className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
+                  onClick={handleSaveDraft}
                 >
-                  保存草稿
+                  {isSaved ? '已保存' : '保存草稿'}
                 </Button>
                 <Button
                   className="flex-1"
-                  leftIcon={isPublishing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  leftIcon={isPublishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   onClick={handlePublish}
                   isLoading={isPublishing}
                 >
-                  提交审核
+                  {isPublishing ? '发布中...' : '发布内容'}
                 </Button>
               </div>
             </div>
@@ -373,38 +488,86 @@ function GeneratePageContent() {
               <Card>
                 <div className="p-4">
                   <h3 className="font-semibold text-foreground mb-3">合规检查</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-foreground-secondary">原创度</span>
-                      <span className="text-sm font-medium text-accent-green">
-                        {content.compliance.originalityScore}%
-                      </span>
-                    </div>
-                    <div className="w-full h-1.5 bg-background-tertiary rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-accent-green rounded-full"
-                        style={{ width: `${content.compliance.originalityScore}%` }}
-                      />
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm text-foreground-secondary">原创度</span>
+                        <span className={cn(
+                          "text-sm font-medium",
+                          (content.compliance?.originalityScore || 0) >= 75 ? "text-accent-green" : "text-accent-yellow"
+                        )}>
+                          {content.compliance?.originalityScore || 0}%
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 bg-background-tertiary rounded-full overflow-hidden">
+                        <div 
+                          className={cn(
+                            "h-full rounded-full",
+                            (content.compliance?.originalityScore || 0) >= 75 ? "bg-accent-green" : "bg-accent-yellow"
+                          )}
+                          style={{ width: `${content.compliance?.originalityScore || 0}%` }}
+                        />
+                      </div>
                     </div>
                     
                     <div className="flex items-center justify-between pt-2">
                       <span className="text-sm text-foreground-secondary">敏感词检测</span>
-                      {content.compliance.sensitiveWords && content.compliance.sensitiveWords.length > 0 ? (
-                        <Badge variant="danger" size="sm">未通过</Badge>
+                      {content.compliance?.sensitiveWords && content.compliance.sensitiveWords.length > 0 ? (
+                        <Badge variant="danger" size="sm">{content.compliance.sensitiveWords.length}个未通过</Badge>
                       ) : (
                         <Badge variant="success" size="sm">已通过</Badge>
                       )}
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-foreground-secondary">整体状态</span>
+                      <span className="text-sm text-foreground-secondary">抖音平台</span>
                       <Badge 
-                        variant={getComplianceStatus(content.compliance).passed ? 'success' : 'warning'} 
+                        variant={content.compliance?.platformChecks.douyin === 'passed' ? 'success' : 'warning'} 
                         size="sm"
                       >
-                        {getComplianceStatus(content.compliance).label}
+                        {content.compliance?.platformChecks.douyin === 'passed' ? '通过' : '需修改'}
                       </Badge>
                     </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-foreground-secondary">小红书平台</span>
+                      <Badge 
+                        variant={content.compliance?.platformChecks.xiaohongshu === 'passed' ? 'success' : 'warning'} 
+                        size="sm"
+                      >
+                        {content.compliance?.platformChecks.xiaohongshu === 'passed' ? '通过' : '需修改'}
+                      </Badge>
+                    </div>
+
+                    <div className="pt-2 border-t border-border">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-foreground">整体状态</span>
+                        <Badge 
+                          variant={getComplianceStatus().passed ? 'success' : 'warning'} 
+                          size="sm"
+                        >
+                          {getComplianceStatus().label}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Agent Chain Info */}
+              <Card>
+                <div className="p-4">
+                  <h3 className="font-semibold text-foreground mb-3">Agent调用链</h3>
+                  <div className="space-y-2">
+                    {(content.agentChain || []).map((agent, idx) => (
+                      <div key={idx} className="flex items-center gap-2 text-sm">
+                        <div className="w-5 h-5 rounded-full bg-accent-green/20 text-accent-green flex items-center justify-center text-xs font-medium">
+                          {idx + 1}
+                        </div>
+                        <span className="text-foreground-secondary">{agent} Agent</span>
+                        <CheckCircle2 className="w-3 h-3 text-accent-green ml-auto" />
+                      </div>
+                    ))}
                   </div>
                 </div>
               </Card>
@@ -413,14 +576,18 @@ function GeneratePageContent() {
               <Card>
                 <div className="p-4">
                   <h3 className="font-semibold text-foreground mb-3">优化建议</h3>
-                  <ul className="space-y-2 text-sm text-foreground-secondary">
+                  <ul className="space-y-3 text-sm text-foreground-secondary">
                     <li className="flex items-start gap-2">
-                      <Zap className="w-4 h-4 text-accent-yellow mt-0.5 flex-shrink-0" />
+                      <Sparkles className="w-4 h-4 text-accent-yellow mt-0.5 flex-shrink-0" />
                       前3秒加入具体数字，完播率可提升20%
                     </li>
                     <li className="flex items-start gap-2">
-                      <Zap className="w-4 h-4 text-accent-yellow mt-0.5 flex-shrink-0" />
+                      <Sparkles className="w-4 h-4 text-accent-yellow mt-0.5 flex-shrink-0" />
                       CTA部分增加互动引导，评论率会更高
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Sparkles className="w-4 h-4 text-accent-yellow mt-0.5 flex-shrink-0" />
+                      故事部分可以再具体一些，增加可信度
                     </li>
                   </ul>
                 </div>
@@ -433,7 +600,7 @@ function GeneratePageContent() {
   );
 }
 
-function cn(...classes: (string | undefined | false)[]): string {
+function cn(...classes: (string | undefined | false)[]) {
   return classes.filter(Boolean).join(' ');
 }
 

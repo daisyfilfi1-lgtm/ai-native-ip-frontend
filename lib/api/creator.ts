@@ -69,6 +69,150 @@ const mockTopics: TopicCard[] = [
   }
 ];
 
+const mockLibraryItems: LibraryItem[] = [
+  {
+    id: 'content_001',
+    title: '现金流断裂如何自救：从负债500万到3年翻身的真实案例',
+    content: '',
+    status: 'published',
+    platforms: ['douyin'],
+    metrics: {
+      views: 85600,
+      likes: 4200,
+      comments: 380,
+      completionRate: 38.5
+    },
+    createdAt: '2026-03-15T10:30:00Z',
+    publishedAt: '2026-03-15T12:00:00Z',
+    generationSource: 'topic',
+    sourceTopicId: 'topic_001',
+    agentChain: ['Strategy', 'Memory', 'Generation', 'Compliance']
+  },
+  {
+    id: 'content_002',
+    title: '为什么90%的IP都在第一步做错了？',
+    content: '',
+    status: 'viral',
+    platforms: ['douyin', 'xiaohongshu'],
+    metrics: {
+      views: 125000,
+      likes: 8900,
+      comments: 1200,
+      completionRate: 42.1
+    },
+    createdAt: '2026-03-10T09:00:00Z',
+    publishedAt: '2026-03-10T11:00:00Z',
+    generationSource: 'topic',
+    sourceTopicId: 'topic_002',
+    agentChain: ['Strategy', 'Memory', 'Generation', 'Compliance']
+  },
+  {
+    id: 'content_003',
+    title: '月入3万的私域运营，朋友圈应该怎么发？',
+    content: '',
+    status: 'pending',
+    platforms: [],
+    createdAt: '2026-03-17T14:00:00Z',
+    generationSource: 'topic',
+    sourceTopicId: 'topic_003',
+    agentChain: ['Strategy', 'Memory', 'Generation', 'Compliance']
+  },
+  {
+    id: 'content_004',
+    title: '2024年最适合普通人的副业TOP5',
+    content: '',
+    status: 'draft',
+    platforms: [],
+    createdAt: '2026-03-17T16:30:00Z',
+    generationSource: 'remix',
+    agentChain: ['Remix', 'Memory', 'Generation', 'Compliance']
+  },
+  {
+    id: 'content_005',
+    title: '一个30岁男人的真实创业故事',
+    content: '',
+    status: 'published',
+    platforms: ['xiaohongshu'],
+    metrics: {
+      views: 32000,
+      likes: 2100,
+      comments: 156,
+      completionRate: 35.2
+    },
+    createdAt: '2026-03-12T08:00:00Z',
+    publishedAt: '2026-03-12T10:00:00Z',
+    generationSource: 'voice',
+    agentChain: ['ASR', 'Memory', 'Generation', 'Compliance']
+  }
+];
+
+const mockGeneratedContents: Record<string, GeneratedContent> = {
+  'gen_topic_001': {
+    id: 'gen_topic_001',
+    title: '现金流断裂如何自救',
+    hook: '从负债500万到3年翻身，我只做对了一件事...',
+    story: '2022年，我的公司现金流断裂，负债500万。那时我每天都在想，是申请破产还是继续坚持？直到有一天，我看到了一个数据：90%的企业倒闭不是因为没利润，而是因为现金流管理出了问题。那一刻，我意识到我必须改变。',
+    opinion: '现金流管理比利润更重要。利润是面子，现金流是里子。很多企业看起来很赚钱，但账上没钱，发不出工资，这就是现金流危机。记住：现金流是企业的血液，没有血液，企业就会死亡。',
+    cta: '如果你也在为现金流发愁，评论区扣"现金流"，我把我的翻身方法论分享给你。',
+    style: 'angry',
+    catchphrases: ['记住', '那一刻'],
+    sourceTracing: [
+      { section: 'hook', sourceId: 'story_003', sourceType: 'story', matchScore: 85 },
+      { section: 'story', sourceId: 'story_003', sourceType: 'story', matchScore: 92 },
+    ],
+    compliance: {
+      originalityScore: 82,
+      sensitiveWords: [],
+      platformChecks: {
+        douyin: 'passed',
+        xiaohongshu: 'passed'
+      }
+    },
+    agentChain: ['Strategy', 'Memory', 'Generation', 'Compliance'],
+    createdAt: '2026-03-18T02:00:00Z'
+  },
+  'gen_remix_001': {
+    id: 'gen_remix_001',
+    title: '副业选择的5个真相',
+    hook: '月薪3千和月薪3万的人，差距根本不在这8小时...',
+    story: '我见过太多人，白天上班摸鱼，晚上回家刷剧。他们抱怨工资低，却从不行动。但真正改变命运的，往往是下班后那4个小时。2021年，我也是个月薪5千的打工人，但用了2年时间，我把副业做成了主业，收入翻了10倍。',
+    opinion: '副业不是雪中送炭，而是锦上添花。最好的副业，是和主业有协同效应的。比如你是设计师，可以接私单；你是程序员，可以做独立开发。不要从零开始，要从你的优势出发。',
+    cta: '想知道我如何找到副业的第一个客户吗？关注我，下期告诉你我的获客秘诀。',
+    style: 'angry',
+    sourceTracing: [],
+    compliance: {
+      originalityScore: 78,
+      sensitiveWords: [],
+      platformChecks: {
+        douyin: 'passed',
+        xiaohongshu: 'passed'
+      }
+    },
+    agentChain: ['Remix', 'Memory', 'Generation', 'Compliance'],
+    createdAt: '2026-03-18T02:00:00Z'
+  },
+  'gen_voice_001': {
+    id: 'gen_voice_001',
+    title: '30岁创业者的真实感悟',
+    hook: '30岁那年，我终于明白了一个道理...',
+    story: '30岁之前，我以为成功是线性的。好好学习，考上好大学，找个好工作，然后升职加薪。但30岁那年，公司裁员，我成了被优化掉的那一个。那一刻我才明白，打工永远是在为别人铺路，只有创业才是为自己积累资产。',
+    opinion: '创业不是赌博，而是有准备的冒险。在你辞职之前，先用业余时间验证你的商业模式。当你副业收入超过主业3倍的时候，才是辞职的最好时机。',
+    cta: '30岁不是终点，而是新的起点。你敢不敢在评论区留下你的年龄和梦想？',
+    style: 'calm',
+    sourceTracing: [],
+    compliance: {
+      originalityScore: 88,
+      sensitiveWords: [],
+      platformChecks: {
+        douyin: 'passed',
+        xiaohongshu: 'passed'
+      }
+    },
+    agentChain: ['ASR', 'Memory', 'Generation', 'Compliance'],
+    createdAt: '2026-03-18T02:00:00Z'
+  }
+};
+
 const mockAgentStatus: AgentConfigStatus = {
   strategy: {
     status: 'ready',
@@ -86,8 +230,8 @@ const mockAgentStatus: AgentConfigStatus = {
     lastUpdated: '2026-03-15'
   },
   remix: {
-    status: 'configuring',
-    config: ['结构解构规则待完善'],
+    status: 'ready',
+    config: ['结构解构规则', '原创度阈值<25%'],
     lastUpdated: '2026-03-17'
   },
   asr: {
@@ -109,8 +253,13 @@ const mockAgentStatus: AgentConfigStatus = {
 
 // ===== API实现 =====
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-native-ip-production.up.railway.app';
+const USE_MOCK = true; // 设置为false时连接真实后端
 
 async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  if (USE_MOCK) {
+    throw new Error('Mock mode: API not implemented');
+  }
+  
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
     headers: {
@@ -129,175 +278,185 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> 
 export const creatorApi = {
   // ===== Agent配置状态 =====
   async getAgentConfigStatus(): Promise<AgentConfigStatus> {
-    // TODO: 连接后端 Agent配置状态API
-    // 后端应返回各Agent的配置状态，用于前端展示是否可用
-    return mockAgentStatus;
+    if (USE_MOCK) {
+      return mockAgentStatus;
+    }
+    return apiFetch('/api/creator/agent-status');
   },
 
   // ===== 场景一：推荐选题 =====
-  // 对应Agent链：Strategy → Memory → Analytics
   async getRecommendedTopics(): Promise<TopicCard[]> {
-    // TODO: 连接后端 /api/creator/topics/recommended
-    // 后端Agent链调用顺序：
-    // 1. Strategy Agent: 获取监控列表 + 四维评分 → 输出评分≥4.5的候选
-    // 2. Memory Agent: 用关键词检索团队专属素材 → 标记匹配度
-    // 3. Analytics Agent: 预测播放量/完播率 → 输出预估数据
-    // 4. 返回前端排序后的3个推荐选题
-    return mockTopics;
+    if (USE_MOCK) {
+      return mockTopics;
+    }
+    return apiFetch('/api/creator/topics/recommended');
   },
 
   async refreshTopics(): Promise<TopicCard[]> {
-    // 手动刷新选题
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return mockTopics.sort(() => Math.random() - 0.5);
+    if (USE_MOCK) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return [...mockTopics].sort(() => Math.random() - 0.5);
+    }
+    return apiFetch('/api/creator/topics/refresh');
   },
 
   // 场景一生成：选题 → 生成
-  // 对应Agent链：Memory → Generation → Compliance
   async generateFromTopic(topicId: string, style: StyleType): Promise<GenerateResult> {
-    // TODO: 连接后端 /api/creator/generate/topic
-    // 后端Agent链调用顺序：
-    // 1. Memory Agent: 根据topicId关键词检索素材（混合检索：文本+语义）
-    // 2. Generation Agent: 
-    //    - 加载已配置的50篇S级训练文本
-    //    - 按指定style（angry/calm/humor）应用风格
-    //    - 应用已配置的口头禅、句长偏好
-    //    - 输出4段结构（钩子/故事/观点/CTA）
-    // 3. Compliance Agent:
-    //    - 原创度检测：vs竞品库 + vs已发表内容
-    //    - 敏感词扫描：三级词库匹配
-    //    - 平台规则检查：基于douyin/xiaohongshu规则
-    //    - 如未通过，打回Generation Agent修改
-    // 4. 返回生成任务ID，前端轮询进度
-    
     console.log('[API] Generate from topic:', { topicId, style });
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    return {
-      id: `gen_${Date.now()}`,
-      status: 'processing',
-      progress: 0,
-      estimatedTime: 8
-    };
+    
+    if (USE_MOCK) {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      return {
+        id: `gen_${topicId}`,
+        status: 'completed',
+        progress: 100,
+        estimatedTime: 0
+      };
+    }
+    
+    return apiFetch('/api/creator/generate/topic', {
+      method: 'POST',
+      body: JSON.stringify({ topicId, style })
+    });
   },
 
   // ===== 场景二：仿写爆款 =====
-  // 对应Agent链：Remix → Memory → Generation → Compliance
   async generateFromRemix(url: string, style: StyleType): Promise<GenerateResult> {
-    // TODO: 连接后端 /api/creator/generate/remix
-    // 后端Agent链调用顺序：
-    // 1. Remix Agent:
-    //    - 解析竞品URL获取内容
-    //    - 按钩子/情绪递进/论证逻辑/CTA解构
-    //    - 计算原创度：文本相似度<25%, 结构相似度<40%
-    // 2. Memory Agent:
-    //    - 按竞品关键词检索可替换的团队素材
-    //    - 返回候选素材列表
-    // 3. Generation Agent:
-    //    - 保持结构，替换内容为团队素材
-    //    - 应用配置的风格/口头禅
-    // 4. Compliance Agent:
-    //    - 原创度检测
-    //    - 敏感词检测
-    // 5. 返回生成任务ID
-    
     console.log('[API] Generate from remix:', { url, style });
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    return {
-      id: `remix_${Date.now()}`,
-      status: 'processing',
-      progress: 0,
-      estimatedTime: 12
-    };
+    
+    if (USE_MOCK) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return {
+        id: 'gen_remix_001',
+        status: 'completed',
+        progress: 100,
+        estimatedTime: 0
+      };
+    }
+    
+    return apiFetch('/api/creator/generate/remix', {
+      method: 'POST',
+      body: JSON.stringify({ url, style })
+    });
   },
 
   // ===== 场景三：语音创作 =====
-  // 对应Agent链：ASR → Memory → Generation → Compliance
   async generateFromVoice(text: string, style: StyleType): Promise<GenerateResult> {
-    // TODO: 连接后端 /api/creator/generate/voice
-    // 后端Agent链调用顺序：
-    // 1. ASR: 将语音转为文字（前端可直接传文字，或用Whisper API）
-    // 2. Memory Agent:
-    //    - 语义理解用户意图
-    //    - 检索相关素材进行关联
-    // 3. Generation Agent:
-    //    - 将简短语音扩展为完整4段结构
-    //    - 保持用户原始意思
-    //    - 应用风格配置
-    // 4. Compliance Agent:
-    //    - 合规检查
-    // 5. 返回生成任务ID
-    
     console.log('[API] Generate from voice:', { text, style });
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    return {
-      id: `voice_${Date.now()}`,
-      status: 'processing',
-      progress: 0,
-      estimatedTime: 8
-    };
+    
+    if (USE_MOCK) {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      return {
+        id: 'gen_voice_001',
+        status: 'completed',
+        progress: 100,
+        estimatedTime: 0
+      };
+    }
+    
+    return apiFetch('/api/creator/generate/voice', {
+      method: 'POST',
+      body: JSON.stringify({ text, style })
+    });
   },
 
   // ===== 获取生成进度 =====
   async getGenerationProgress(id: string): Promise<GenerateResult> {
-    // TODO: 连接后端 /api/creator/generate/:id/progress
-    // 返回当前生成进度和各Agent调用状态
-    return {
-      id,
-      status: 'processing',
-      progress: 60,
-      estimatedTime: 3
-    };
+    if (USE_MOCK) {
+      return {
+        id,
+        status: 'completed',
+        progress: 100,
+        estimatedTime: 0
+      };
+    }
+    return apiFetch(`/api/creator/generate/${id}/progress`);
   },
 
   // ===== 获取生成结果 =====
   async getGeneratedContent(id: string): Promise<GeneratedContent> {
-    // TODO: 连接后端 /api/creator/generate/:id/result
-    // 返回最终生成的文案和分段结构
-    return {
-      id,
-      title: '现金流断裂如何自救',
-      hook: '从负债500万到3年翻身，我只做对了一件事...',
-      story: '2022年，我的公司现金流断裂，负债500万。那时我每天都在想，是申请破产还是继续坚持？直到有一天，我看到了一个数据：90%的企业倒闭不是因为没利润，而是因为现金流管理出了问题...',
-      opinion: '现金流管理比利润更重要。利润是面子，现金流是里子。很多企业看起来很赚钱，但账上没钱，发不出工资，这就是现金流危机。',
-      cta: '如果你也在为现金流发愁，评论区扣"现金流"，我把我的翻身方法论分享给你。',
-      style: 'angry',
-      sourceTracing: [
-        { section: 'story', sourceId: 'story_003', matchScore: 85 }
-      ],
-      compliance: {
-        originalityScore: 82,
-        sensitiveWords: [],
-        platformChecks: {
-          douyin: 'passed',
-          xiaohongshu: 'passed'
-        }
-      },
-      agentChain: ['Memory', 'Generation', 'Compliance']
-    };
+    if (USE_MOCK) {
+      // 模拟延迟
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // 根据ID返回对应的内容
+      if (mockGeneratedContents[id]) {
+        return mockGeneratedContents[id];
+      }
+      
+      // 如果找不到，返回默认内容
+      return mockGeneratedContents['gen_topic_001'];
+    }
+    return apiFetch(`/api/creator/generate/${id}/result`);
   },
 
   // ===== 内容库 =====
   async getLibraryItems(status?: string): Promise<LibraryItem[]> {
-    // TODO: 连接后端 /api/creator/library
-    return [];
+    if (USE_MOCK) {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      if (!status || status === 'all') {
+        return mockLibraryItems;
+      }
+      
+      return mockLibraryItems.filter(item => item.status === status);
+    }
+    
+    const url = status ? `/api/creator/library?status=${status}` : '/api/creator/library';
+    return apiFetch(url);
   },
 
   async publishContent(id: string, platforms: string[]): Promise<void> {
-    // TODO: 连接后端 /api/creator/publish
     console.log('Publish:', { id, platforms });
+    
+    if (USE_MOCK) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return;
+    }
+    
+    return apiFetch('/api/creator/publish', {
+      method: 'POST',
+      body: JSON.stringify({ id, platforms })
+    });
   },
 
   // ===== 数据分析 =====
   async getAnalytics(): Promise<AnalyticsMetrics> {
-    // TODO: 连接后端 /api/creator/analytics
-    return {
-      published: 12,
-      viral: 2,
-      leads: 156,
-      viralRate: 16.7,
-      completionRate: 38.5,
-      engagementRate: 5.2
-    };
+    if (USE_MOCK) {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      return {
+        published: 12,
+        viral: 2,
+        leads: 156,
+        viralRate: 16.7,
+        completionRate: 38.5,
+        engagementRate: 5.2,
+        suggestions: [
+          {
+            id: '1',
+            type: 'hook',
+            title: '优化钩子',
+            description: '黄金3秒加入具体数字，完播率可提升20%',
+            priority: 'high'
+          },
+          {
+            id: '2',
+            type: 'timing',
+            title: '发布时间',
+            description: '尝试在晚上7-9点发布，获得更多流量',
+            priority: 'medium'
+          },
+          {
+            id: '3',
+            type: 'style',
+            title: '风格调整',
+            description: '在CTA部分增加互动引导，有助于提升评论率',
+            priority: 'medium'
+          }
+        ]
+      };
+    }
+    return apiFetch('/api/creator/analytics');
   },
 };
 
