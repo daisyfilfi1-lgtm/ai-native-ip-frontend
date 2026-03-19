@@ -39,9 +39,8 @@ export default function IntegrationsConfigPage() {
   const [isTesting, setIsTesting] = useState(false);
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
-  // 模拟加载现有配置
   useEffect(() => {
-    // 这里应该调用 API 获取现有配置
+    // Fetch existing config from backend
     // GET /api/v1/config/integrations/feishu
   }, []);
 
@@ -50,16 +49,13 @@ export default function IntegrationsConfigPage() {
     setMessage(null);
     
     try {
-      // 调用后端 API 保存配置
       // POST /api/v1/config/integrations/feishu
-      // Body: { app_id, app_secret }
-      
-      await new Promise(resolve => setTimeout(resolve, 1000)); // 模拟 API 调用
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       setFeishuConfig(prev => ({ ...prev, is_configured: true }));
-      setMessage({ type: 'success', text: '飞书凭证保存成功！' });
+      setMessage({ type: 'success', text: 'Feishu credentials saved successfully!' });
     } catch (error) {
-      setMessage({ type: 'error', text: '保存失败，请检查凭证是否正确' });
+      setMessage({ type: 'error', text: 'Failed to save credentials' });
     } finally {
       setIsLoading(false);
     }
@@ -70,27 +66,25 @@ export default function IntegrationsConfigPage() {
     setMessage(null);
     
     try {
-      // 调用后端 API 测试连接
       // GET /api/v1/integrations/feishu/spaces
-      
-      await new Promise(resolve => setTimeout(resolve, 1500)); // 模拟 API 调用
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       setFeishuConfig(prev => ({ 
         ...prev, 
         status: 'connected',
         last_tested: new Date().toISOString()
       }));
-      setMessage({ type: 'success', text: '连接测试成功！可以访问飞书知识库' });
+      setMessage({ type: 'success', text: 'Connection successful!' });
     } catch (error) {
       setFeishuConfig(prev => ({ ...prev, status: 'error' }));
-      setMessage({ type: 'error', text: '连接测试失败，请检查凭证和权限' });
+      setMessage({ type: 'error', text: 'Connection failed' });
     } finally {
       setIsTesting(false);
     }
   };
 
   return (
-    <MainLayout title="集成配置中心">
+    <MainLayout title="Integration Config">
       {/* Header */}
       <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-accent-blue/10 via-primary-500/10 to-accent-cyan/10 border border-accent-blue/20">
         <div className="flex items-center gap-4">
@@ -98,8 +92,8 @@ export default function IntegrationsConfigPage() {
             <Cloud className="w-7 h-7 text-white" />
           </div>
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-foreground">第三方集成配置</h2>
-            <p className="text-foreground-secondary">管理 AI-Native IP 与外部服务的连接配置</p>
+            <h2 className="text-xl font-bold text-foreground">Third-party Integrations</h2>
+            <p className="text-foreground-secondary">Manage connections to external services</p>
           </div>
         </div>
       </div>
@@ -108,32 +102,31 @@ export default function IntegrationsConfigPage() {
         <TabsList>
           <TabsTrigger value="feishu" className="gap-2">
             <BookOpen className="w-4 h-4" />
-            飞书知识库
+            Feishu KB
             {feishuConfig.is_configured && (
               <Badge variant="success" size="sm" dot />
             )}
           </TabsTrigger>
           <TabsTrigger value="ai" className="gap-2" disabled>
             <Database className="w-4 h-4" />
-            AI 模型
-            <Badge variant="default" size="sm">即将推出</Badge>
+            AI Models
+            <Badge variant="default" size="sm">Soon</Badge>
           </TabsTrigger>
           <TabsTrigger value="storage" className="gap-2" disabled>
             <Shield className="w-4 h-4" />
-            存储服务
-            <Badge variant="default" size="sm">即将推出</Badge>
+            Storage
+            <Badge variant="default" size="sm">Soon</Badge>
           </TabsTrigger>
         </TabsList>
 
-        {/* Feishu Integration */}
         <TabsContent value="feishu">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Configuration Form */}
             <div className="lg:col-span-2 space-y-6">
               <Card>
                 <CardHeader 
-                  title="飞书开放平台配置" 
-                  description="输入飞书企业自建应用的凭证"
+                  title="Feishu Open Platform Config" 
+                  description="Enter your Feishu app credentials"
                 />
                 <div className="space-y-4">
                   {/* Status Banner */}
@@ -141,9 +134,9 @@ export default function IntegrationsConfigPage() {
                     <div className="p-4 rounded-xl bg-accent-green/10 border border-accent-green/20 flex items-center gap-3">
                       <CheckCircle2 className="w-5 h-5 text-accent-green" />
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-accent-green">连接正常</p>
+                        <p className="text-sm font-medium text-accent-green">Connected</p>
                         <p className="text-xs text-accent-green/80">
-                          上次测试: {feishuConfig.last_tested ? new Date(feishuConfig.last_tested).toLocaleString('zh-CN') : '刚刚'}
+                          Last tested: {feishuConfig.last_tested ? new Date(feishuConfig.last_tested).toLocaleString() : 'just now'}
                         </p>
                       </div>
                     </div>
@@ -153,8 +146,8 @@ export default function IntegrationsConfigPage() {
                     <div className="p-4 rounded-xl bg-accent-red/10 border border-accent-red/20 flex items-center gap-3">
                       <AlertCircle className="w-5 h-5 text-accent-red" />
                       <div>
-                        <p className="text-sm font-medium text-accent-red">连接失败</p>
-                        <p className="text-xs text-accent-red/80">请检查凭证和权限配置</p>
+                        <p className="text-sm font-medium text-accent-red">Connection failed</p>
+                        <p className="text-xs text-accent-red/80">Check credentials and permissions</p>
                       </div>
                     </div>
                   )}
@@ -165,7 +158,7 @@ export default function IntegrationsConfigPage() {
                     placeholder="cli_xxxxxxxxxxxx"
                     value={feishuConfig.app_id}
                     onChange={(e) => setFeishuConfig(prev => ({ ...prev, app_id: e.target.value }))}
-                    helper="从飞书开放平台「凭证与基础信息」中获取"
+                    helper="Get from Feishu Open Platform"
                   />
 
                   {/* App Secret */}
@@ -176,14 +169,14 @@ export default function IntegrationsConfigPage() {
                     <div className="relative">
                       <input
                         type="password"
-                        placeholder="输入 App Secret"
+                        placeholder="Enter App Secret"
                         value={feishuConfig.app_secret}
                         onChange={(e) => setFeishuConfig(prev => ({ ...prev, app_secret: e.target.value }))}
                         className="w-full bg-background-tertiary border border-border rounded-xl px-4 py-3 text-foreground placeholder:text-foreground-muted focus:outline-none focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20"
                       />
                     </div>
                     <p className="mt-1.5 text-sm text-foreground-tertiary">
-                      凭证将安全存储在服务器，不会在前端显示
+                      Credentials stored securely on server
                     </p>
                   </div>
 
@@ -206,7 +199,7 @@ export default function IntegrationsConfigPage() {
                       isLoading={isLoading}
                       leftIcon={<Save className="w-4 h-4" />}
                     >
-                      保存配置
+                      Save Config
                     </Button>
                     <Button 
                       variant="secondary"
@@ -215,7 +208,7 @@ export default function IntegrationsConfigPage() {
                       disabled={!feishuConfig.app_id || !feishuConfig.app_secret}
                       leftIcon={<RefreshCw className="w-4 h-4" />}
                     >
-                      测试连接
+                      Test Connection
                     </Button>
                   </div>
                 </div>
@@ -223,7 +216,7 @@ export default function IntegrationsConfigPage() {
 
               {/* Quick Actions */}
               <Card>
-                <CardHeader title="快捷操作" description="配置完成后的常用功能" />
+                <CardHeader title="Quick Actions" description="Common tasks after setup" />
                 <div className="grid grid-cols-2 gap-3">
                   <a 
                     href="https://open.feishu.cn/app" 
@@ -235,21 +228,21 @@ export default function IntegrationsConfigPage() {
                       <ExternalLink className="w-5 h-5 text-foreground-secondary group-hover:text-primary-400" />
                       <ChevronRight className="w-4 h-4 text-foreground-muted" />
                     </div>
-                    <p className="text-sm font-medium text-foreground">飞书开放平台</p>
-                    <p className="text-xs text-foreground-tertiary mt-1">管理应用和权限</p>
+                    <p className="text-sm font-medium text-foreground">Feishu Open Platform</p>
+                    <p className="text-xs text-foreground-tertiary mt-1">Manage app permissions</p>
                   </a>
                   
                   <button 
                     className="p-4 rounded-xl bg-background-tertiary hover:bg-background-elevated transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={!feishuConfig.is_configured}
-                    onClick={() => window.location.href = '/agents/memory?tab=feishu'}
+                    onClick={() => window.location.href = '/agents/memory'}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <BookOpen className="w-5 h-5 text-foreground-secondary" />
                       <ChevronRight className="w-4 h-4 text-foreground-muted" />
                     </div>
-                    <p className="text-sm font-medium text-foreground">知识库同步</p>
-                    <p className="text-xs text-foreground-tertiary mt-1">开始同步文档</p>
+                    <p className="text-sm font-medium text-foreground">Sync Knowledge Base</p>
+                    <p className="text-xs text-foreground-tertiary mt-1">Start document sync</p>
                   </button>
                 </div>
               </Card>
@@ -258,25 +251,25 @@ export default function IntegrationsConfigPage() {
             {/* Setup Guide */}
             <div className="space-y-6">
               <Card>
-                <CardHeader title="配置指南" description="三步完成飞书集成" />
+                <CardHeader title="Setup Guide" description="3 steps to integrate" />
                 <div className="space-y-4">
                   {[
                     {
                       step: 1,
-                      title: '创建应用',
-                      desc: '在飞书开放平台创建企业自建应用',
+                      title: 'Create App',
+                      desc: 'Create enterprise app in Feishu Open Platform',
                       link: 'https://open.feishu.cn/app',
-                      linkText: '去创建'
+                      linkText: 'Create'
                     },
                     {
                       step: 2,
-                      title: '开通权限',
-                      desc: '开通 wiki:space:read、wiki:node:read 权限',
+                      title: 'Enable Permissions',
+                      desc: 'Enable wiki:space:read and wiki:node:read',
                     },
                     {
                       step: 3,
-                      title: '授权访问',
-                      desc: '将应用添加为知识库成员（可读权限）',
+                      title: 'Authorize Access',
+                      desc: 'Add app as knowledge base member (read access)',
                     }
                   ].map((item) => (
                     <div key={item.step} className="flex gap-3">
@@ -303,12 +296,12 @@ export default function IntegrationsConfigPage() {
               </Card>
 
               <Card>
-                <CardHeader title="帮助文档" description="常见问题解答" />
+                <CardHeader title="FAQ" description="Common questions" />
                 <div className="space-y-3">
                   {[
-                    { q: '如何获取 App ID 和 Secret？', a: '飞书开放平台 → 凭证与基础信息' },
-                    { q: '同步失败怎么办？', a: '检查权限和应用是否已添加为知识库成员' },
-                    { q: '支持哪些文档类型？', a: '目前支持 doc 和 docx 格式' },
+                    { q: 'How to get App ID and Secret?', a: 'Feishu Open Platform → Credentials' },
+                    { q: 'Sync failed?', a: 'Check permissions and knowledge base membership' },
+                    { q: 'Supported document types?', a: 'Currently supports doc and docx' },
                   ].map((faq, idx) => (
                     <div key={idx} className="p-3 rounded-lg bg-background-tertiary">
                       <p className="text-sm font-medium text-foreground">{faq.q}</p>
