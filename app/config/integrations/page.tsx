@@ -107,12 +107,12 @@ export default function IntegrationsConfigPage() {
               <Badge variant="success" size="sm" dot />
             )}
           </TabsTrigger>
-          <TabsTrigger value="ai" className="gap-2" disabled>
+          <TabsTrigger value="ai" className="gap-2 opacity-50 cursor-not-allowed">
             <Database className="w-4 h-4" />
             AI Models
             <Badge variant="default" size="sm">Soon</Badge>
           </TabsTrigger>
-          <TabsTrigger value="storage" className="gap-2" disabled>
+          <TabsTrigger value="storage" className="gap-2 opacity-50 cursor-not-allowed">
             <Shield className="w-4 h-4" />
             Storage
             <Badge variant="default" size="sm">Soon</Badge>
