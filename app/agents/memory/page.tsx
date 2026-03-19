@@ -22,7 +22,11 @@ import {
   Plus,
   Loader2,
   CheckCircle2,
-  Brain
+  Brain,
+  Cloud,
+  RefreshCw,
+  BookOpen,
+  AlertCircle
 } from 'lucide-react';
 import { IngestRequest, RetrieveRequest } from '@/types';
 
@@ -81,6 +85,7 @@ export default function MemoryAgentPage() {
       <Tabs defaultValue="ingest" className="w-full">
         <TabsList>
           <TabsTrigger value="ingest">素材录入</TabsTrigger>
+          <TabsTrigger value="feishu">飞书同步</TabsTrigger>
           <TabsTrigger value="retrieve">语义检索</TabsTrigger>
           <TabsTrigger value="tags">标签管理</TabsTrigger>
           <TabsTrigger value="config">高级配置</TabsTrigger>
@@ -319,6 +324,125 @@ export default function MemoryAgentPage() {
               ))}
             </div>
           </Card>
+        </TabsContent>
+
+        {/* Feishu Sync Tab */}
+        <TabsContent value="feishu">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader 
+                title="飞书知识库同步" 
+                description="将飞书知识库文档同步到 Memory"
+              />
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-background-tertiary border border-border">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-lg bg-accent-blue/10 flex items-center justify-center">
+                      <BookOpen className="w-5 h-5 text-accent-blue" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">知识空间</p>
+                      <p className="text-xs text-foreground-tertiary">选择要同步的飞书知识库</p>
+                    </div>
+                  </div>
+                  <Select
+                    label="选择知识空间"
+                    options={[
+                      { value: '', label: '加载中...' },
+                      { value: 'space_001', label: 'IP内容知识库' },
+                      { value: 'space_002', label: '产品文档中心' },
+                    ]}
+                  />
+                </div>
+
+                <Input
+                  label="目标 IP ID"
+                  placeholder="例如：zhangkai_001"
+                  helper="同步的文档将归属到该IP的素材库"
+                />
+
+                <div className="p-3 rounded-lg bg-accent-yellow/10 border border-accent-yellow/20">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-accent-yellow mt-0.5" />
+                    <p className="text-xs text-accent-yellow">
+                      请确保飞书应用已配置并有知识库访问权限
+                    </p>
+                  </div>
+                </div>
+
+                <Button className="w-full" leftIcon={<RefreshCw className="w-4 h-4" />}>
+                  开始同步
+                </Button>
+              </div>
+            </Card>
+
+            <Card>
+              <CardHeader 
+                title="同步记录" 
+                description="最近同步历史"
+              />
+              <div className="space-y-3">
+                {[
+                  { time: '2026-03-18 10:30', status: 'success', count: 15, space: 'IP内容知识库' },
+                  { time: '2026-03-17 16:45', status: 'success', count: 8, space: '产品文档中心' },
+                  { time: '2026-03-16 09:20', status: 'failed', count: 0, space: 'IP内容知识库' },
+                ].map((record, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 rounded-xl bg-background-tertiary">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-foreground">{record.space}</p>
+                        <Badge variant={record.status === 'success' ? 'success' : 'danger'} size="sm">
+                          {record.status === 'success' ? '成功' : '失败'}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-foreground-tertiary mt-1">{record.time}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-foreground">{record.count} 篇</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card className="lg:col-span-2">
+              <CardHeader 
+                title="配置说明" 
+                description="飞书开放平台配置指南"
+              />
+              <div className="space-y-4 text-sm text-foreground-secondary">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 rounded-xl bg-background-tertiary">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center">1</span>
+                      <span className="font-medium text-foreground">创建应用</span>
+                    </div>
+                    <p className="text-xs">在飞书开放平台创建企业自建应用，获取 App ID 和 App Secret</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-background-tertiary">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center">2</span>
+                      <span className="font-medium text-foreground">配置权限</span>
+                    </div>
+                    <p className="text-xs">开通 wiki:space:read、wiki:node:read 等知识库相关权限</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-background-tertiary">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center">3</span>
+                      <span className="font-medium text-foreground">授权访问</span>
+                    </div>
+                    <p className="text-xs">将应用添加为知识库成员，确保有读取权限</p>
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-background-tertiary">
+                  <p className="text-xs">
+                    <span className="text-foreground font-medium">环境变量：</span>
+                    在 Railway 或本地 .env 中配置 FEISHU_APP_ID 和 FEISHU_APP_SECRET
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Config Tab */}
