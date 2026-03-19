@@ -14,7 +14,8 @@ import {
   BarChart3, 
   Settings,
   Cloud,
-  Sparkles
+  Sparkles,
+  PenTool
 } from 'lucide-react';
 
 const navigation = [
@@ -42,6 +43,12 @@ const navigation = [
       { name: '通用设置', href: '/config', icon: Settings },
       { name: '集成配置', href: '/config/integrations', icon: Cloud },
     ]
+  },
+  { 
+    name: 'IP创作端', 
+    href: '/creator/dashboard', 
+    icon: PenTool,
+    external: true
   },
 ];
 
@@ -82,21 +89,43 @@ export function Sidebar({ className }: SidebarProps) {
             const Icon = item.icon;
             const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
             
+            const linkContent = (
+              <>
+                <Icon className={cn('w-4 h-4', isActive && 'text-primary-400')} />
+                {item.name}
+                {item.external && (
+                  <span className="ml-auto text-xs text-foreground-muted">→</span>
+                )}
+              </>
+            );
+            
             return (
               <li key={item.name}>
-                <Link
-                  href={item.href}
-                  className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-xl',
-                    'text-sm font-medium transition-all duration-200',
-                    isActive
-                      ? 'bg-primary-500/10 text-primary-400'
-                      : 'text-foreground-secondary hover:text-foreground hover:bg-background-tertiary'
-                  )}
-                >
-                  <Icon className={cn('w-4 h-4', isActive && 'text-primary-400')} />
-                  {item.name}
-                </Link>
+                {item.external ? (
+                  <a
+                    href={item.href}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-xl',
+                      'text-sm font-medium transition-all duration-200',
+                      'text-foreground-secondary hover:text-foreground hover:bg-background-tertiary'
+                    )}
+                  >
+                    {linkContent}
+                  </a>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-xl',
+                      'text-sm font-medium transition-all duration-200',
+                      isActive
+                        ? 'bg-primary-500/10 text-primary-400'
+                        : 'text-foreground-secondary hover:text-foreground hover:bg-background-tertiary'
+                    )}
+                  >
+                    {linkContent}
+                  </Link>
+                )}
                 
                 {/* Sub-items */}
                 {item.children && isActive && (
