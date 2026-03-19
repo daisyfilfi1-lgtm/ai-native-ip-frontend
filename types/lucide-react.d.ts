@@ -80,6 +80,7 @@ declare module 'lucide-react' {
   // AI & Tech
   export const Cpu: LucideIcon;
   export const Brain: LucideIcon;
+  export const Bot: LucideIcon;
   export const GitBranch: LucideIcon;
   export const Database: LucideIcon;
   export const Cloud: LucideIcon;
@@ -92,6 +93,7 @@ declare module 'lucide-react' {
   export const Heart: LucideIcon;
   export const ThumbsUp: LucideIcon;
   export const MessageCircle: LucideIcon;
+  export const MessageSquare: LucideIcon;
   export const Bell: LucideIcon;
   export const Search: LucideIcon;
 

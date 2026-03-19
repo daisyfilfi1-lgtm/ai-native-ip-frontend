@@ -17,7 +17,8 @@ import {
   Settings,
   Play,
   Pause,
-  ArrowRight
+  ArrowRight,
+  MessageSquare
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -98,6 +99,32 @@ export default function AgentsPage() {
 
   return (
     <MainLayout title="7-Agent工作流">
+      {/* Quick Config Banner */}
+      <Link href="/agents/onboarding">
+        <Card className="mb-6 hover:border-primary-500/50 transition-all group cursor-pointer">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-pink to-purple-600 flex items-center justify-center">
+              <MessageSquare className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-foreground group-hover:text-primary-400 transition-colors">
+                  🎉 全新：对话式配置引导
+                </h2>
+                <Badge variant="primary" size="sm">推荐</Badge>
+              </div>
+              <p className="text-sm text-foreground-secondary mt-1">
+                不需要理解复杂的技术参数，只需回答几个简单问题，AI助手帮你完成所有配置
+              </p>
+            </div>
+            <div className="hidden sm:flex items-center gap-2 text-primary-400">
+              <span className="text-sm font-medium">开始配置</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+        </Card>
+      </Link>
+
       {/* Overview banner */}
       <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-primary-500/10 via-accent-cyan/10 to-accent-pink/10 border border-primary-500/20">
         <div className="flex items-center gap-4 mb-4">
