@@ -147,7 +147,7 @@ export default function MemoryAgentPage() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} defaultValue="ingest" onValueChange={setActiveTab} className="w-full">
         <TabsList>
           <TabsTrigger value="ingest">素材录入</TabsTrigger>
           <TabsTrigger value="feishu">飞书同步</TabsTrigger>
