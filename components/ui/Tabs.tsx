@@ -19,18 +19,24 @@ function useTabs() {
 }
 
 interface TabsProps {
-  defaultValue: string;
+  defaultValue?: string;
   value?: string;
   onValueChange?: (value: string) => void;
   children: ReactNode;
   className?: string;
 }
 
-function Tabs({ defaultValue, value, onValueChange, children, className }: TabsProps) {
+function Tabs({ defaultValue = '', value, onValueChange, children, className }: TabsProps) {
   const [activeTab, setActiveTabState] = useState(defaultValue);
   
   const activeTabValue = value ?? activeTab;
-  const setActiveTab = onValueChange ?? setActiveTabState;
+  const setActiveTab = (newValue: string) => {
+    if (onValueChange) {
+      onValueChange(newValue);
+    } else {
+      setActiveTabState(newValue);
+    }
+  };
 
   return (
     <TabsContext.Provider value={{ activeTab: activeTabValue, setActiveTab }}>

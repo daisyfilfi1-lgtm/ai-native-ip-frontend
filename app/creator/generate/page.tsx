@@ -7,8 +7,9 @@ import { CreatorLayout } from '@/components/creator/CreatorLayout';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { creatorApi, mockGeneratedContent } from '@/lib/api/creator';
-import type { GeneratedContent, StyleType } from '@/types/creator';
+import { creatorApi } from '@/lib/api/creator';
+import type { GeneratedContent, StyleType, ComplianceResult, PlatformRule } from '@/types/creator';
+import type { LucideIcon } from 'lucide-react';
 import { 
   Sparkles, 
   CheckCircle2, 
@@ -26,13 +27,30 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+interface SectionConfig {
+  title: string;
+  color: string;
+}
+
+interface SectionData {
+  content: string;
+  source?: string;
+}
+
+interface ContentSections {
+  hook: SectionData;
+  story: SectionData;
+  opinion: SectionData;
+  cta: SectionData;
+}
+
 const styles: { value: StyleType; label: string; emoji: string; color: string }[] = [
   { value: 'angry', label: '愤怒', emoji: '🔥', color: 'from-red-500 to-orange-500' },
   { value: 'calm', label: '冷静', emoji: '😌', color: 'from-blue-500 to-cyan-500' },
   { value: 'humor', label: '幽默', emoji: '😄', color: 'from-yellow-500 to-amber-500' },
 ];
 
-const sectionLabels: Record<string, { title: string; color: string }> = {
+const sectionLabels: Record<string, SectionConfig> = {
   hook: { title: '钩子', color: 'text-accent-pink' },
   story: { title: '故事', color: 'text-accent-cyan' },
   opinion: { title: '观点', color: 'text-primary-400' },
@@ -70,7 +88,7 @@ function GeneratePageContent() {
 
   const loadContent = async () => {
     try {
-      const data = await creatorApi.getGeneratedContent(topicId || 'topic_001', currentStyle);
+      const data: GeneratedContent = await creatorApi.getGeneratedContent(topicId || 'topic_001');
       setContent(data);
       setIsGenerating(false);
     } catch (error) {
@@ -85,22 +103,34 @@ function GeneratePageContent() {
     setContent(null);
   };
 
-  const handleEdit = (sectionKey: string, currentText: string) => {
+  const getSectionContent = (key: string): string => {
+    if (!content) return '';
+    switch (key) {
+      case 'hook': return content.hook;
+      case 'story': return content.story;
+      case 'opinion': return content.opinion;
+      case 'cta': return content.cta;
+      default: return '';
+    }
+  };
+
+  const getSectionSource = (key: string): string | undefined => {
+    if (!content || !content.sourceTracing) return undefined;
+    const trace = content.sourceTracing.find(t => t.section === key);
+    return trace ? `素材_${trace.sourceId}` : undefined;
+  };
+
+  const handleEdit = (sectionKey: string) => {
     setEditingSection(sectionKey);
-    setEditedContent(prev => ({ ...prev, [sectionKey]: currentText }));
+    setEditedContent(prev => ({ ...prev, [sectionKey]: getSectionContent(sectionKey) }));
   };
 
   const handleSaveEdit = (sectionKey: string) => {
     if (content) {
+      const newContent = editedContent[sectionKey] || getSectionContent(sectionKey);
       setContent({
         ...content,
-        sections: {
-          ...content.sections,
-          [sectionKey]: {
-            ...content.sections[sectionKey as keyof typeof content.sections],
-            content: editedContent[sectionKey] || content.sections[sectionKey as keyof typeof content.sections].content
-          }
-        }
+        [sectionKey]: newContent
       });
     }
     setEditingSection(null);
@@ -112,6 +142,22 @@ function GeneratePageContent() {
     setIsPublishing(false);
     alert('内容已提交审核！');
   };
+
+  const getComplianceStatus = (compliance: ComplianceResult): { passed: boolean; label: string } => {
+    const allPassed = compliance.platformChecks.douyin === 'passed' && 
+                      compliance.platformChecks.xiaohongshu === 'passed';
+    return {
+      passed: allPassed,
+      label: allPassed ? '通过' : '需修改'
+    };
+  };
+
+  const sections: ContentSections = content ? {
+    hook: { content: content.hook, source: getSectionSource('hook') },
+    story: { content: content.story, source: getSectionSource('story') },
+    opinion: { content: content.opinion, source: getSectionSource('opinion') },
+    cta: { content: content.cta, source: getSectionSource('cta') },
+  } : { hook: { content: '' }, story: { content: '' }, opinion: { content: '' }, cta: { content: '' } };
 
   return (
     <CreatorLayout>
@@ -231,7 +277,7 @@ function GeneratePageContent() {
           >
             {/* Content Editor */}
             <div className="lg:col-span-2 space-y-4">
-              {Object.entries(content.sections).map(([key, section], index) => (
+              {Object.entries(sections).map(([key, section], index) => (
                 <motion.div
                   key={key}
                   initial={{ opacity: 0, x: -20 }}
@@ -267,7 +313,7 @@ function GeneratePageContent() {
                               size="sm"
                               variant="ghost"
                               leftIcon={<Edit3 className="w-4 h-4" />}
-                              onClick={() => handleEdit(key, section.content)}
+                              onClick={() => handleEdit(key)}
                             >
                               编辑
                             </Button>
@@ -298,7 +344,7 @@ function GeneratePageContent() {
                   variant="secondary"
                   leftIcon={<Copy className="w-4 h-4" />}
                   onClick={() => {
-                    const fullText = Object.values(content.sections).map(s => s.content).join('\n\n');
+                    const fullText = [content.hook, content.story, content.opinion, content.cta].join('\n\n');
                     navigator.clipboard.writeText(fullText);
                   }}
                 >
@@ -331,19 +377,19 @@ function GeneratePageContent() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-foreground-secondary">原创度</span>
                       <span className="text-sm font-medium text-accent-green">
-                        {content.compliance.originality}%
+                        {content.compliance.originalityScore}%
                       </span>
                     </div>
                     <div className="w-full h-1.5 bg-background-tertiary rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-accent-green rounded-full"
-                        style={{ width: `${content.compliance.originality}%` }}
+                        style={{ width: `${content.compliance.originalityScore}%` }}
                       />
                     </div>
                     
                     <div className="flex items-center justify-between pt-2">
                       <span className="text-sm text-foreground-secondary">敏感词检测</span>
-                      {content.compliance.sensitiveWords ? (
+                      {content.compliance.sensitiveWords && content.compliance.sensitiveWords.length > 0 ? (
                         <Badge variant="danger" size="sm">未通过</Badge>
                       ) : (
                         <Badge variant="success" size="sm">已通过</Badge>
@@ -353,10 +399,10 @@ function GeneratePageContent() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-foreground-secondary">整体状态</span>
                       <Badge 
-                        variant={content.compliance.status === 'passed' ? 'success' : 'warning'} 
+                        variant={getComplianceStatus(content.compliance).passed ? 'success' : 'warning'} 
                         size="sm"
                       >
-                        {content.compliance.status === 'passed' ? '通过' : '需修改'}
+                        {getComplianceStatus(content.compliance).label}
                       </Badge>
                     </div>
                   </div>
@@ -387,7 +433,7 @@ function GeneratePageContent() {
   );
 }
 
-function cn(...classes: (string | undefined | false)[]) {
+function cn(...classes: (string | undefined | false)[]): string {
   return classes.filter(Boolean).join(' ');
 }
 

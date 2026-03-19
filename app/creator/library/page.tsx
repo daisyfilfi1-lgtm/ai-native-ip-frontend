@@ -6,7 +6,8 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { creatorApi } from '@/lib/api/creator';
-import type { ContentItem } from '@/types/creator';
+import type { LibraryItem } from '@/types/creator';
+import type { LucideIcon } from 'lucide-react';
 import { 
   FileText,
   Eye,
@@ -19,19 +20,32 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-const tabs = [
+interface TabConfig {
+  value: string;
+  label: string;
+  count: number;
+}
+
+type BadgeVariant = 'default' | 'primary' | 'success' | 'warning';
+
+interface StatusConfig {
+  label: string;
+  variant: BadgeVariant;
+}
+
+const tabs: TabConfig[] = [
   { value: 'all', label: '全部', count: 28 },
   { value: 'pending', label: '待审核', count: 3 },
   { value: 'published', label: '已发布', count: 22 },
-  { value: 'hit', label: '爆款', count: 3 },
+  { value: 'viral', label: '爆款', count: 3 },
   { value: 'draft', label: '草稿', count: 3 },
 ];
 
-const statusConfig: Record<ContentItem['status'], { label: string; variant: 'default' | 'primary' | 'success' | 'warning' }> = {
+const statusConfig: Record<LibraryItem['status'], StatusConfig> = {
   draft: { label: '草稿', variant: 'default' },
   pending: { label: '待审核', variant: 'warning' },
   published: { label: '已发布', variant: 'primary' },
-  hit: { label: '爆款', variant: 'success' },
+  viral: { label: '爆款', variant: 'success' },
 };
 
 const styleEmojis: Record<string, string> = {
@@ -42,7 +56,7 @@ const styleEmojis: Record<string, string> = {
 
 export default function CreatorLibraryPage() {
   const [activeTab, setActiveTab] = useState('all');
-  const [contents, setContents] = useState<ContentItem[]>([]);
+  const [contents, setContents] = useState<LibraryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,8 +66,8 @@ export default function CreatorLibraryPage() {
   const loadContents = async () => {
     setLoading(true);
     try {
-      const status = activeTab === 'all' ? undefined : activeTab as ContentItem['status'];
-      const data = await creatorApi.getContentLibrary(status);
+      const status = activeTab === 'all' ? undefined : activeTab;
+      const data: LibraryItem[] = await creatorApi.getLibraryItems(status);
       setContents(data);
     } catch (error) {
       console.error('Failed to load contents:', error);
@@ -62,11 +76,15 @@ export default function CreatorLibraryPage() {
     }
   };
 
-  const formatNumber = (num: number) => {
+  const formatNumber = (num: number): string => {
     if (num >= 10000) return (num / 10000).toFixed(1) + 'w';
     if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
     return num.toString();
   };
+
+  const getViews = (content: LibraryItem): number => content.metrics?.views ?? 0;
+  const getLikes = (content: LibraryItem): number => content.metrics?.likes ?? 0;
+  const getStyle = (content: LibraryItem): string => content.generationSource || 'angry';
 
   return (
     <CreatorLayout>
@@ -112,7 +130,7 @@ export default function CreatorLibraryPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {contents.map((content, index) => (
+          {contents.map((content) => (
             <Card 
               key={content.id}
               className="group overflow-hidden hover:border-primary-500/50 transition-colors"
@@ -123,7 +141,7 @@ export default function CreatorLibraryPage() {
                 
                 {/* Style Emoji */}
                 <div className="absolute top-3 left-3 w-8 h-8 rounded-full bg-background/80 flex items-center justify-center text-lg">
-                  {styleEmojis[content.style]}
+                  {styleEmojis[getStyle(content)]}
                 </div>
 
                 {/* Status Badge */}
@@ -149,16 +167,16 @@ export default function CreatorLibraryPage() {
 
                 {/* Stats */}
                 <div className="flex items-center gap-4 text-sm text-foreground-secondary mb-3">
-                  {content.views !== undefined && (
+                  {getViews(content) > 0 && (
                     <div className="flex items-center gap-1">
                       <Eye className="w-4 h-4" />
-                      <span>{formatNumber(content.views)}</span>
+                      <span>{formatNumber(getViews(content))}</span>
                     </div>
                   )}
-                  {content.likes !== undefined && (
+                  {getLikes(content) > 0 && (
                     <div className="flex items-center gap-1">
                       <Heart className="w-4 h-4" />
-                      <span>{formatNumber(content.likes)}</span>
+                      <span>{formatNumber(getLikes(content))}</span>
                     </div>
                   )}
                   <span className="text-xs text-foreground-tertiary">
@@ -183,7 +201,7 @@ export default function CreatorLibraryPage() {
                       查看数据
                     </Button>
                   )}
-                  {content.status === 'hit' && (
+                  {content.status === 'viral' && (
                     <Button size="sm" className="flex-1" leftIcon={<RefreshCw className="w-3 h-3" />}>
                       复用爆款
                     </Button>
@@ -217,6 +235,6 @@ export default function CreatorLibraryPage() {
   );
 }
 
-function cn(...classes: (string | undefined | false)[]) {
+function cn(...classes: (string | undefined | false)[]): string {
   return classes.filter(Boolean).join(' ');
 }
