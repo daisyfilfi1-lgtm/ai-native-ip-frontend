@@ -5,15 +5,14 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
-import { 
-  GitBranch, 
-  Loader2, 
-  Search, 
+import {
+  GitBranch,
+  Loader2,
+  Search,
   Plus,
   Trash2,
   Database,
   ArrowRight,
-  Globe
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { GraphStatsResult, GraphRetrieveResult } from '@/types';
@@ -109,7 +108,7 @@ export function GraphRAGPanel({ ipId }: GraphRAGPanelProps) {
         ) : stats ? (
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 bg-green-50 rounded-lg text-center">
-              <Globe className="w-5 h-5 text-green-500 mx-auto mb-1" />
+              <GitBranch className="w-5 h-5 text-green-500 mx-auto mb-1" />
               <div className="text-lg font-bold text-green-600">
                 {stats.total_nodes}
               </div>
