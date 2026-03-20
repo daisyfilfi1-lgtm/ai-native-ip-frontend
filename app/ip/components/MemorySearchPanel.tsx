@@ -13,7 +13,7 @@ import {
   Layers,
   Zap,
   Brain,
-  Image,
+  Image as ImageIcon,
   Video,
   Music,
   RefreshCw,

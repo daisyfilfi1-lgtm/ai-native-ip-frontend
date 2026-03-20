@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { 
-  Image, 
+  Image as ImageIcon, 
   Video, 
   Music, 
   Loader2, 
@@ -147,7 +147,7 @@ export function MultimodalPanel({ ipId }: MultimodalPanelProps) {
         {loading ? (
           <Loader2 className="w-4 h-4 animate-spin mr-2" />
         ) : (
-          mode === 'image' ? <Image className="w-4 h-4 mr-2" /> :
+          mode === 'image' ? <ImageIcon className="w-4 h-4 mr-2" /> :
           mode === 'video' ? <Video className="w-4 h-4 mr-2" /> :
           <Music className="w-4 h-4 mr-2" />
         )}
