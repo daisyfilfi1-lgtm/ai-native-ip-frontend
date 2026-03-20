@@ -23,7 +23,7 @@ import {
   Lightbulb,
   ThumbsUp,
   MessageSquare,
-  UserPlus,
+  Users,
   Target
 } from 'lucide-react';
 
@@ -68,7 +68,7 @@ const METRICS_DIAGNOSIS = [
   {
     key: 'follow_rate',
     name: '转粉率',
-    icon: UserPlus,
+    icon: Users,
     threshold: 0.5,
     unit: '%',
     suggestion: '需强化人设记忆点',

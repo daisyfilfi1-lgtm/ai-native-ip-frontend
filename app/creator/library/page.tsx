@@ -21,7 +21,7 @@ import {
   Clock,
   ThumbsUp,
   MessageSquare,
-  UserPlus,
+  Users,
   X
 } from 'lucide-react';
 import Link from 'next/link';
@@ -98,7 +98,7 @@ const METRICS_CONFIG = [
   {
     key: 'follow_rate',
     name: '转粉率',
-    icon: UserPlus,
+    icon: Users,
     threshold: 0.5,
     unit: '%',
     suggestion: '需强化人设记忆点',
