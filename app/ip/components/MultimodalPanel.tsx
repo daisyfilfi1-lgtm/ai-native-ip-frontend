@@ -13,9 +13,7 @@ import {
   Send,
   Sparkles,
   Upload,
-  FileAudio,
-  FileVideo,
-  FileImage
+  FileText
 } from 'lucide-react';
 import { api } from '@/lib/api';
 
@@ -93,7 +91,7 @@ export function MultimodalPanel({ ipId }: MultimodalPanelProps) {
           size="sm"
           onClick={() => setMode('image')}
         >
-          <FileImage className="w-4 h-4 mr-1" />
+          <FileText className="w-4 h-4 mr-1" />
           图片
         </Button>
         <Button
@@ -101,7 +99,7 @@ export function MultimodalPanel({ ipId }: MultimodalPanelProps) {
           size="sm"
           onClick={() => setMode('video')}
         >
-          <FileVideo className="w-4 h-4 mr-1" />
+          <FileText className="w-4 h-4 mr-1" />
           视频
         </Button>
         <Button
@@ -109,7 +107,7 @@ export function MultimodalPanel({ ipId }: MultimodalPanelProps) {
           size="sm"
           onClick={() => setMode('audio')}
         >
-          <FileAudio className="w-4 h-4 mr-1" />
+          <FileText className="w-4 h-4 mr-1" />
           音频
         </Button>
       </div>
@@ -188,7 +186,7 @@ export function MultimodalPanel({ ipId }: MultimodalPanelProps) {
                 <div className="mb-3">
                   <div className="text-sm font-medium mb-2">情感倾向</div>
                   <Badge variant={result.sentiment === 'positive' ? 'success' : 
-                    result.sentiment === 'negative' ? 'destructive' : 'outline'}>
+                    result.sentiment === 'negative' ? 'danger' : 'outline'}>
                     {result.sentiment === 'positive' ? '正面' : 
                      result.sentiment === 'negative' ? '负面' : '中性'}
                   </Badge>
