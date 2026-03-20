@@ -19,10 +19,11 @@ import {
   Shield,
   Database
 } from 'lucide-react';
+import { api } from '@/lib/api';
 
 interface FeishuConfig {
   app_id: string;
-  app_secret: string;
+  app_secret: string; // 仅前端输入暂存，不从后端回显
   is_configured: boolean;
   last_tested?: string;
   status?: 'connected' | 'error' | 'unknown';
@@ -40,8 +41,20 @@ export default function IntegrationsConfigPage() {
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
   useEffect(() => {
-    // Fetch existing config from backend
-    // GET /api/v1/config/integrations/feishu
+    (async () => {
+      try {
+        const cfg = await api.getFeishuConfig();
+        setFeishuConfig((prev) => ({
+          ...prev,
+          app_id: cfg.app_id || '',
+          app_secret: '',
+          is_configured: cfg.configured,
+          status: cfg.configured ? 'connected' : 'unknown',
+        }));
+      } catch {
+        setFeishuConfig((prev) => ({ ...prev, status: 'error' }));
+      }
+    })();
   }, []);
 
   const handleSave = async () => {
@@ -49,8 +62,10 @@ export default function IntegrationsConfigPage() {
     setMessage(null);
     
     try {
-      // POST /api/v1/config/integrations/feishu
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await api.saveFeishuConfig({
+        app_id: feishuConfig.app_id.trim(),
+        app_secret: feishuConfig.app_secret.trim(),
+      });
       
       setFeishuConfig(prev => ({ ...prev, is_configured: true }));
       setMessage({ type: 'success', text: 'Feishu credentials saved successfully!' });
@@ -66,8 +81,7 @@ export default function IntegrationsConfigPage() {
     setMessage(null);
     
     try {
-      // GET /api/v1/integrations/feishu/spaces
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await api.getFeishuSpaces();
       
       setFeishuConfig(prev => ({ 
         ...prev, 
@@ -197,6 +211,7 @@ export default function IntegrationsConfigPage() {
                       className="flex-1"
                       onClick={handleSave}
                       isLoading={isLoading}
+                      disabled={!feishuConfig.app_id.trim() || !feishuConfig.app_secret.trim()}
                       leftIcon={<Save className="w-4 h-4" />}
                     >
                       Save Config

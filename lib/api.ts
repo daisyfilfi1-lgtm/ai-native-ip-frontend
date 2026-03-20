@@ -5,6 +5,9 @@ import type {
   RetrieveRequest, RetrieveResult,
   MemoryFullConfig,
   FeishuConfig, FeishuConfigSave, FeishuSpaceItem, FeishuSyncResult,
+  PendingLabelsItem,
+  UpdateLabelsRequest,
+  ConfigHistoryItem,
 } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
@@ -31,6 +34,11 @@ class ApiClient {
   }
 
   // IP APIs
+  async listIPs(): Promise<IP[]> {
+    const response = await this.client.get<IP[]>('/ip');
+    return response.data;
+  }
+
   async createIP(data: CreateIPRequest): Promise<IP> {
     const response = await this.client.post<IP>('/ip', data);
     return response.data;
@@ -52,6 +60,13 @@ class ApiClient {
     return response.data;
   }
 
+  async getAssets(ipId: string, limit = 20, offset = 0): Promise<{ items: { asset_id: string; title?: string; content_snippet?: string; asset_type: string; metadata: Record<string, unknown> }[]; total: number }> {
+    const response = await this.client.get<{ items: unknown[]; total: number }>('/memory/assets', {
+      params: { ip_id: ipId, limit, offset },
+    });
+    return response.data;
+  }
+
   async retrieveMemory(data: RetrieveRequest): Promise<RetrieveResult[]> {
     const response = await this.client.post<{ results: RetrieveResult[] }>('/memory/retrieve', data);
     return response.data.results;
@@ -67,6 +82,13 @@ class ApiClient {
 
   async saveMemoryConfig(data: MemoryFullConfig): Promise<{ success: boolean; version: number }> {
     const response = await this.client.post<{ success: boolean; version: number }>('/config/memory', data);
+    return response.data;
+  }
+
+  async getConfigHistory(ipId: string, limit = 20): Promise<{ items: ConfigHistoryItem[] }> {
+    const response = await this.client.get<{ items: ConfigHistoryItem[] }>('/config/history', {
+      params: { ip_id: ipId, limit },
+    });
     return response.data;
   }
 
@@ -91,6 +113,19 @@ class ApiClient {
       ip_id: ipId,
       space_id: spaceId || undefined,
     });
+    return response.data;
+  }
+
+  // 待办标签
+  async getPendingLabels(ipId: string, limit = 20): Promise<{ items: PendingLabelsItem[] }> {
+    const response = await this.client.get<{ items: PendingLabelsItem[] }>('/memory/pending-labels', {
+      params: { ip_id: ipId, limit },
+    });
+    return response.data;
+  }
+
+  async updateLabels(assetId: string, data: UpdateLabelsRequest): Promise<{ success: boolean }> {
+    const response = await this.client.post<{ success: boolean }>(`/memory/labels/${assetId}`, data);
     return response.data;
   }
 }

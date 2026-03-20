@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -12,53 +12,68 @@ import {
   Users, 
   FileText, 
   Settings,
-  ExternalLink
+  ExternalLink,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import { IP } from '@/types';
+import { api } from '@/lib/api';
 
-// Mock data
-const mockIPs: IP[] = [
-  { 
-    ip_id: 'zhangkai_001', 
-    name: '张凯', 
-    owner_user_id: 'user_001',
-    status: 'active',
-    created_at: '2026-03-01T00:00:00Z',
-    updated_at: '2026-03-18T00:00:00Z',
-  },
-  { 
-    ip_id: 'lina_002', 
-    name: '李娜', 
-    owner_user_id: 'user_002',
-    status: 'active',
-    created_at: '2026-03-05T00:00:00Z',
-    updated_at: '2026-03-17T00:00:00Z',
-  },
-  { 
-    ip_id: 'wanghao_003', 
-    name: '王浩', 
-    owner_user_id: 'user_003',
-    status: 'inactive',
-    created_at: '2026-03-10T00:00:00Z',
-    updated_at: '2026-03-15T00:00:00Z',
-  },
-];
-
-const statsData: Record<string, { content: number; assets: number; lastActive: string }> = {
-  'zhangkai_001': { content: 1245, assets: 86, lastActive: '10分钟前' },
-  'lina_002': { content: 892, assets: 64, lastActive: '1小时前' },
-  'wanghao_003': { content: 456, assets: 32, lastActive: '3天前' },
-};
+// 统计为占位（后端暂无内容/素材数接口）
+const statsData: Record<string, { content: number; assets: number; lastActive: string }> = {};
 
 export default function IPManagementPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [ips, setIps] = useState<IP[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [createName, setCreateName] = useState('');
+  const [createIpId, setCreateIpId] = useState('');
+  const [createOwnerId, setCreateOwnerId] = useState('admin');
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
 
-  const filteredIPs = mockIPs.filter(ip => 
+  useEffect(() => {
+    (async () => {
+      try {
+        const list = await api.listIPs();
+        setIps(list);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const filteredIPs = ips.filter(ip => 
     ip.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     ip.ip_id.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleCreateIP = async () => {
+    const name = createName.trim();
+    const ip_id = createIpId.trim();
+    const owner_user_id = createOwnerId.trim();
+    if (!name || !ip_id || !owner_user_id) {
+      setCreateError('请填写 IP 名称、IP ID 和负责人 ID');
+      return;
+    }
+    setCreating(true);
+    setCreateError('');
+    try {
+      await api.createIP({ ip_id, name, owner_user_id, status: 'active' });
+      const list = await api.listIPs();
+      setIps(list);
+      setShowCreateModal(false);
+      setCreateName('');
+      setCreateIpId('');
+    } catch (e: any) {
+      setCreateError(e.response?.data?.detail || (e as Error).message || '创建失败');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   return (
     <MainLayout title="IP管理">
@@ -82,6 +97,11 @@ export default function IPManagementPage() {
       </div>
 
       {/* IP Grid */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12 gap-2 text-foreground-secondary">
+          <Loader2 className="w-5 h-5 animate-spin" /> 加载中...
+        </div>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filteredIPs.map((ip) => {
           const stats = statsData[ip.ip_id] || { content: 0, assets: 0, lastActive: '-' };
@@ -153,9 +173,10 @@ export default function IPManagementPage() {
           );
         })}
       </div>
+      )}
 
       {/* Empty state */}
-      {filteredIPs.length === 0 && (
+      {!loading && filteredIPs.length === 0 && (
         <div className="text-center py-16">
           <div className="w-16 h-16 rounded-full bg-background-tertiary flex items-center justify-center mx-auto mb-4">
             <Users className="w-8 h-8 text-foreground-tertiary" />
@@ -170,7 +191,7 @@ export default function IPManagementPage() {
         </div>
       )}
 
-      {/* Create IP Modal (simplified) */}
+      {/* Create IP Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <Card className="w-full max-w-md">
@@ -183,18 +204,32 @@ export default function IPManagementPage() {
                 label="IP名称" 
                 placeholder="例如：张凯"
                 helper="输入IP的显示名称"
+                value={createName}
+                onChange={(e) => setCreateName(e.target.value)}
               />
               <Input 
                 label="IP ID" 
                 placeholder="例如：zhangkai_001"
                 helper="唯一标识符，创建后不可修改"
+                value={createIpId}
+                onChange={(e) => setCreateIpId(e.target.value)}
               />
+              <Input 
+                label="负责人 ID" 
+                placeholder="例如：admin"
+                helper="归属运营/管理账号"
+                value={createOwnerId}
+                onChange={(e) => setCreateOwnerId(e.target.value)}
+              />
+              {createError && (
+                <p className="text-sm text-accent-red">{createError}</p>
+              )}
               <div className="flex justify-end gap-3 pt-4">
-                <Button variant="ghost" onClick={() => setShowCreateModal(false)}>
+                <Button variant="ghost" onClick={() => { setShowCreateModal(false); setCreateError(''); }} disabled={creating}>
                   取消
                 </Button>
-                <Button onClick={() => setShowCreateModal(false)}>
-                  创建
+                <Button onClick={handleCreateIP} disabled={creating} leftIcon={creating ? <Loader2 className="w-4 h-4 animate-spin" /> : undefined}>
+                  {creating ? '创建中...' : '创建'}
                 </Button>
               </div>
             </div>

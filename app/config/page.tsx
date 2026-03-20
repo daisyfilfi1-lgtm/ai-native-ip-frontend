@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -21,33 +22,90 @@ import {
   CheckCircle2,
   AlertCircle,
   Clock,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
+import { api } from '@/lib/api';
+import type { ConfigHistoryItem, IP } from '@/types';
 
-// Agent config status
-const agentConfigs = [
-  { id: 'memory', name: '记忆Agent', icon: Brain, status: 'configured', progress: 100, color: 'from-violet-500 to-purple-600' },
-  { id: 'strategy', name: '策略Agent', icon: GitBranch, status: 'configured', progress: 85, color: 'from-cyan-500 to-blue-600' },
-  { id: 'generation', name: '生成Agent', icon: FileText, status: 'configuring', progress: 60, color: 'from-amber-500 to-orange-600' },
-  { id: 'compliance', name: '合规Agent', icon: Shield, status: 'configured', progress: 100, color: 'from-emerald-500 to-teal-600' },
-  { id: 'visual', name: '视觉Agent', icon: Video, status: 'pending', progress: 30, color: 'from-blue-500 to-indigo-600' },
-  { id: 'analytics', name: '分析Agent', icon: BarChart3, status: 'pending', progress: 0, color: 'from-purple-500 to-cyan-600' },
-];
-
-const configHistory = [
-  { id: 1, agent: '记忆Agent', action: '更新标签体系', user: '管理员', time: '2小时前', version: 5 },
-  { id: 2, agent: '策略Agent', action: '修改评分权重', user: '管理员', time: '昨天', version: 3 },
-  { id: 3, agent: '生成Agent', action: '添加口头禅', user: '管理员', time: '3天前', version: 8 },
+// 除记忆外其余 Agent 为静态占位
+const otherAgentConfigs = [
+  { id: 'strategy', name: '策略Agent', icon: GitBranch, status: 'configured' as const, progress: 85, color: 'from-cyan-500 to-blue-600' },
+  { id: 'generation', name: '生成Agent', icon: FileText, status: 'configuring' as const, progress: 60, color: 'from-amber-500 to-orange-600' },
+  { id: 'compliance', name: '合规Agent', icon: Shield, status: 'configured' as const, progress: 100, color: 'from-emerald-500 to-teal-600' },
+  { id: 'visual', name: '视觉Agent', icon: Video, status: 'pending' as const, progress: 30, color: 'from-blue-500 to-indigo-600' },
+  { id: 'analytics', name: '分析Agent', icon: BarChart3, status: 'pending' as const, progress: 0, color: 'from-purple-500 to-cyan-600' },
 ];
 
 export default function ConfigPage() {
+  const searchParams = useSearchParams();
+  const urlIp = searchParams.get('ip') || '';
+
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [ipList, setIpList] = useState<IP[]>([]);
+  const [configIp, setConfigIp] = useState(urlIp);
+  const [memoryConfigStatus, setMemoryConfigStatus] = useState<'configured' | 'configuring' | 'pending'>( 'pending');
+  const [memoryProgress, setMemoryProgress] = useState(0);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [configHistory, setConfigHistory] = useState<ConfigHistoryItem[]>([]);
+
+  useEffect(() => { setConfigIp(prev => prev || urlIp); }, [urlIp]);
+
+  useEffect(() => {
+    api.listIPs().then(setIpList).catch(() => setIpList([]));
+  }, []);
+
+  useEffect(() => {
+    if (!configIp.trim()) {
+      setMemoryConfigStatus('pending');
+      setMemoryProgress(0);
+      return;
+    }
+    setStatusLoading(true);
+    api.getMemoryConfig(configIp.trim())
+      .then((data) => {
+        const hasTag = !!data.tag_config;
+        const hasMemory = !!data.memory_config;
+        if (hasTag && hasMemory) {
+          setMemoryConfigStatus('configured');
+          setMemoryProgress(100);
+        } else if (hasTag || hasMemory) {
+          setMemoryConfigStatus('configuring');
+          setMemoryProgress(hasTag && hasMemory ? 100 : 50);
+        } else {
+          setMemoryConfigStatus('pending');
+          setMemoryProgress(0);
+        }
+      })
+      .catch(() => {
+        setMemoryConfigStatus('pending');
+        setMemoryProgress(0);
+      })
+      .finally(() => setStatusLoading(false));
+  }, [configIp]);
+
+  useEffect(() => {
+    if (!configIp.trim()) {
+      setConfigHistory([]);
+      return;
+    }
+    setHistoryLoading(true);
+    api.getConfigHistory(configIp.trim(), 20)
+      .then((res) => setConfigHistory(res.items || []))
+      .catch(() => setConfigHistory([]))
+      .finally(() => setHistoryLoading(false));
+  }, [configIp]);
+
+  const agentConfigs = [
+    { id: 'memory', name: '记忆Agent', icon: Brain, status: memoryConfigStatus, progress: memoryProgress, color: 'from-violet-500 to-purple-600' },
+    ...otherAgentConfigs,
+  ];
 
   const handleSave = async () => {
     setIsSaving(true);
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     setIsSaving(false);
     setHasChanges(false);
@@ -92,11 +150,24 @@ export default function ConfigPage() {
           <Card>
             <CardHeader 
               title="Agent配置状态" 
-              description="各Agent的配置完整度和状态"
+              description="各Agent的配置完整度和状态（记忆Agent按所选 IP 从接口拉取）"
             />
+            <div className="mb-4">
+              <Select
+                label="选择 IP"
+                value={configIp}
+                onChange={(e) => setConfigIp(e.target.value)}
+                options={[
+                  { value: '', label: statusLoading ? '加载中...' : '请选择 IP' },
+                  ...ipList.map((ip) => ({ value: ip.ip_id, label: `${ip.name} (${ip.ip_id})` })),
+                  ...(configIp && !ipList.some((ip) => ip.ip_id === configIp) ? [{ value: configIp, label: configIp }] : []),
+                ]}
+              />
+            </div>
             <div className="space-y-4">
               {agentConfigs.map((agent) => {
                 const Icon = agent.icon;
+                const configHref = agent.id === 'memory' && configIp ? `/agents/memory?ip=${encodeURIComponent(configIp)}` : `/agents/${agent.id}`;
                 return (
                   <div key={agent.id} className="p-4 rounded-xl bg-background-tertiary">
                     <div className="flex items-center gap-4">
@@ -107,6 +178,7 @@ export default function ConfigPage() {
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-medium text-foreground">{agent.name}</h4>
                           <div className="flex items-center gap-2">
+                            {agent.id === 'memory' && statusLoading && <Loader2 className="w-4 h-4 animate-spin text-foreground-tertiary" />}
                             {agent.status === 'configured' && (
                               <Badge variant="success" size="sm">已配置</Badge>
                             )}
@@ -116,7 +188,7 @@ export default function ConfigPage() {
                             {agent.status === 'pending' && (
                               <Badge variant="default" size="sm">待配置</Badge>
                             )}
-                            <Link href={`/agents/${agent.id}`}>
+                            <Link href={configHref}>
                               <Button variant="ghost" size="sm" className="gap-1">
                                 配置
                                 <ChevronRight className="w-4 h-4" />
@@ -187,6 +259,7 @@ export default function ConfigPage() {
           {/* Config history */}
           <Card>
             <CardHeader title="配置历史" description="最近的配置变更记录" />
+            {historyLoading && <p className="text-sm text-foreground-tertiary">加载中...</p>}
             <div className="space-y-3">
               {configHistory.map((item) => (
                 <div key={item.id} className="flex items-start gap-3 p-3 rounded-xl bg-background-tertiary">
@@ -198,7 +271,9 @@ export default function ConfigPage() {
                       <span className="text-xs text-foreground-muted">·</span>
                       <span className="text-xs text-foreground-muted">v{item.version}</span>
                     </div>
-                    <p className="text-xs text-foreground-muted mt-1">{item.time}</p>
+                    <p className="text-xs text-foreground-muted mt-1">
+                      {item.time ? new Date(item.time).toLocaleString() : ''}
+                    </p>
                   </div>
                 </div>
               ))}

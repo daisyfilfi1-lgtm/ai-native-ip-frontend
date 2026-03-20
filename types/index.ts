@@ -167,3 +167,27 @@ export interface FeishuSyncResult {
   failed: number;
   errors: string[];
 }
+
+// 待办标签 / 更新标签
+export interface PendingLabelsItem {
+  asset_id: string;
+  title?: string;
+  source?: string;
+  content_snippet?: string;
+  auto_labels: Record<string, unknown>;
+}
+
+export interface UpdateLabelsRequest {
+  ip_id: string;
+  confirmed_labels: Record<string, unknown>;
+}
+
+// Config history
+export interface ConfigHistoryItem {
+  id: string;
+  agent: string;
+  action: string;
+  user: string;
+  time: string;
+  version: number;
+}
