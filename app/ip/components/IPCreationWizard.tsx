@@ -8,8 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Progress } from '@/components/ui/Progress';
 import { 
-  ChevronRight, 
-  ChevronLeft, 
+  ChevronRight,
   Target, 
   User, 
   Image as ImageIcon,
@@ -22,7 +21,6 @@ import {
   TrendingUp,
   Lightbulb,
   Camera,
-  Type,
   FileText,
   Layout,
   Video,
@@ -82,7 +80,7 @@ const MONETIZATION_MODELS = [
 // 7个超级符号触点
 const TOUCHPOINTS = [
   { id: 'avatar', name: '头像', icon: Camera, desc: '真人出镜或高识别度LOGO', placeholder: '上传头像图片或描述设计理念...' },
-  { id: 'nickname', name: '昵称', icon: Type, desc: '行业标签+人名，避免生僻字', placeholder: '例如：张凯聊运营、李姐说育儿...' },
+  { id: 'nickname', name: '昵称', icon: FileText, desc: '行业标签+人名，避免生僻字', placeholder: '例如：张凯聊运营、李姐说育儿...' },
   { id: 'bio', name: '简介', icon: FileText, desc: '痛点承诺+解决方案+社会证明', placeholder: '例如：帮助1000+商家实现流量破圈，专注私域变现...' },
   { id: 'cover_image', name: '头图', icon: Layout, desc: '场景化展示（黑板/办公室/工作台）', placeholder: '上传头图或描述场景...' },
   { id: 'cover_template', name: '封面模板', icon: ImageIcon, desc: '统一视觉模板（标题字体/配色/人物站位）', placeholder: '描述封面风格...' },

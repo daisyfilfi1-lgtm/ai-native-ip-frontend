@@ -32,7 +32,7 @@ import {
   ChevronRight,
   Flame,
   Upload,
-  Keyboard,
+  FileText as Keyboard,
   Wand2,
   Lightbulb
 } from 'lucide-react';

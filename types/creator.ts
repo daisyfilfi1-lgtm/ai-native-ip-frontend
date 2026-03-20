@@ -46,6 +46,10 @@ export interface GeneratedContent {
   // Agent调用链
   agentChain: string[];
   
+  // 爆款原创相关 (Viral Original)
+  viralElements?: string[];         // 选中的爆款元素
+  scriptTemplate?: string;          // 脚本模板ID
+  
   // 元数据
   createdAt?: string;
   updatedAt?: string;
