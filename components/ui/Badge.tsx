@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils';
 import { forwardRef, HTMLAttributes } from 'react';
 
-type BadgeVariant = 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
+type BadgeVariant = 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info' | 'outline';
 type BadgeSize = 'sm' | 'md';
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
@@ -22,6 +22,7 @@ const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
       warning: 'bg-accent-yellow/10 text-accent-yellow border-accent-yellow/20',
       danger: 'bg-accent-red/10 text-accent-red border-accent-red/20',
       info: 'bg-accent-cyan/10 text-accent-cyan border-accent-cyan/20',
+      outline: 'bg-transparent text-foreground border-border',
     };
 
     const sizes: Record<BadgeSize, string> = {
@@ -37,6 +38,7 @@ const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
       warning: 'bg-accent-yellow',
       danger: 'bg-accent-red',
       info: 'bg-accent-cyan',
+      outline: 'bg-foreground',
     };
 
     return (
