@@ -778,9 +778,9 @@ export function IPCreationWizard({ onComplete, onCancel, isLoading }: IPCreation
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="w-full max-w-3xl max-h-[90vh] overflow-hidden"
+        className="w-full max-w-3xl h-[85vh] flex flex-col"
       >
-        <Card className="h-full flex flex-col">
+        <Card className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
           <div className="p-6 border-b border-border">
             <div className="flex items-center justify-between mb-4">
