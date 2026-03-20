@@ -188,7 +188,7 @@ export default function RemixAgentPage() {
                         <div className="mb-2">
                           <span className="text-xs text-foreground-tertiary">关键词: </span>
                           {template.keywords.map((kw, i) => (
-                            <span key={i} className="text-xs text-foreground-secondary mr-2">"{kw}"</span>
+                            <span key={i} className="text-xs text-foreground-secondary mr-2">&ldquo;{kw}&rdquo;</span>
                           ))}
                         </div>
                       )}
