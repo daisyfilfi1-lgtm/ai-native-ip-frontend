@@ -18,7 +18,7 @@ import {
   RefreshCw,
   Filter,
   BarChart3,
-  Timer,
+  Clock,
   ThumbsUp,
   MessageSquare,
   UserPlus,
@@ -66,7 +66,7 @@ const METRICS_CONFIG = [
   {
     key: 'completion_rate',
     name: '完播率',
-    icon: Timer,
+    icon: Clock,
     threshold: 30,
     unit: '%',
     suggestion: '需优化开头钩子',

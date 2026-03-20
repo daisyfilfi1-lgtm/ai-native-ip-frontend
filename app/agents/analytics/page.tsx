@@ -21,7 +21,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Lightbulb,
-  Timer,
+  Clock,
   ThumbsUp,
   MessageSquare,
   UserPlus,
@@ -33,7 +33,7 @@ const METRICS_DIAGNOSIS = [
   {
     key: 'completion_rate',
     name: '完播率',
-    icon: Timer,
+    icon: Clock,
     threshold: 30,
     unit: '%',
     suggestion: '需优化开头钩子',
