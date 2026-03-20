@@ -2,6 +2,7 @@ import axios, { AxiosError, AxiosInstance } from 'axios';
 import type { 
   IP, CreateIPRequest, 
   IngestRequest, IngestResponse, IngestStatus,
+  AssetsListResponse,
   RetrieveRequest, RetrieveResult,
   MemoryFullConfig,
   FeishuConfig, FeishuConfigSave, FeishuSpaceItem, FeishuSyncResult,
@@ -60,8 +61,8 @@ class ApiClient {
     return response.data;
   }
 
-  async getAssets(ipId: string, limit = 20, offset = 0): Promise<{ items: { asset_id: string; title?: string; content_snippet?: string; asset_type: string; metadata: Record<string, unknown> }[]; total: number }> {
-    const response = await this.client.get<{ items: unknown[]; total: number }>('/memory/assets', {
+  async getAssets(ipId: string, limit = 20, offset = 0): Promise<AssetsListResponse> {
+    const response = await this.client.get<AssetsListResponse>('/memory/assets', {
       params: { ip_id: ipId, limit, offset },
     });
     return response.data;

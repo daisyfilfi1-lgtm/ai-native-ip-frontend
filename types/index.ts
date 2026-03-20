@@ -37,6 +37,20 @@ export interface IngestStatus {
   created_assets: string[];
 }
 
+/** GET /memory/assets 单条素材摘要 */
+export interface MemoryAssetItem {
+  asset_id: string;
+  title?: string;
+  content_snippet?: string;
+  asset_type: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface AssetsListResponse {
+  items: MemoryAssetItem[];
+  total: number;
+}
+
 export interface RetrieveRequest {
   ip_id: string;
   query: string;
