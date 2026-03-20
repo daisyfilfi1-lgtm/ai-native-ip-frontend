@@ -69,13 +69,8 @@ export default function IPManagementPage() {
         owner_user_id: formData.owner_user_id,
         status: 'active',
         // 账号体系字段
-        avatar_url: formData.avatar_url,
         nickname: formData.nickname,
         bio: formData.bio,
-        cover_image_url: formData.cover_image_url,
-        cover_template: formData.cover_template,
-        pinned_content: formData.pinned_content,
-        like_follower_ratio: formData.like_follower_ratio,
         // 商业定位字段
         monetization_model: formData.monetization_model,
         target_audience: formData.target_audience,

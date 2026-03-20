@@ -11,7 +11,6 @@ import {
   ChevronRight,
   Target, 
   User, 
-  Image as ImageIcon,
   Sparkles,
   CheckCircle2,
   DollarSign,
@@ -20,11 +19,7 @@ import {
   Brain,
   TrendingUp,
   Lightbulb,
-  Camera,
   FileText,
-  Layout,
-  Video,
-  BarChart3,
   Loader2,
   AlertCircle
 } from 'lucide-react';
@@ -77,15 +72,10 @@ const MONETIZATION_MODELS = [
   }
 ];
 
-// 7个超级符号触点
+// 2个核心超级符号触点
 const TOUCHPOINTS = [
-  { id: 'avatar', name: '头像', icon: Camera, desc: '真人出镜或高识别度LOGO', placeholder: '上传头像图片或描述设计理念...' },
   { id: 'nickname', name: '昵称', icon: FileText, desc: '行业标签+人名，避免生僻字', placeholder: '例如：张凯聊运营、李姐说育儿...' },
   { id: 'bio', name: '简介', icon: FileText, desc: '痛点承诺+解决方案+社会证明', placeholder: '例如：帮助1000+商家实现流量破圈，专注私域变现...' },
-  { id: 'cover_image', name: '头图', icon: Layout, desc: '场景化展示（黑板/办公室/工作台）', placeholder: '上传头图或描述场景...' },
-  { id: 'cover_template', name: '封面模板', icon: ImageIcon, desc: '统一视觉模板（标题字体/配色/人物站位）', placeholder: '描述封面风格...' },
-  { id: 'pinned', name: '置顶视频', icon: Video, desc: '高转化内容（个人故事/最强干货/服务介绍）', placeholder: '描述置顶视频内容...' },
-  { id: 'ratio', name: '赞粉比', icon: BarChart3, desc: '保持1:3健康比例（获赞10万，粉丝3万）', placeholder: '当前赞粉比或目标...' },
 ];
 
 interface IPCreationWizardProps {
@@ -117,13 +107,8 @@ export interface IPFormData {
   repurchase_rate: string;
   
   // 超级符号识别系统
-  avatar_url: string;
   nickname: string;
   bio: string;
-  cover_image_url: string;
-  cover_template: string;
-  pinned_content: string;
-  like_follower_ratio: string;
 }
 
 const steps = [
@@ -151,13 +136,8 @@ export function IPCreationWizard({ onComplete, onCancel, isLoading }: IPCreation
     product_service: '',
     price_range: '',
     repurchase_rate: '',
-    avatar_url: '',
     nickname: '',
     bio: '',
-    cover_image_url: '',
-    cover_template: '',
-    pinned_content: '',
-    like_follower_ratio: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -574,18 +554,14 @@ export function IPCreationWizard({ onComplete, onCancel, isLoading }: IPCreation
                 超级符号识别系统
               </h3>
               <p className="text-sm text-foreground-secondary">
-                建立7个标准化触点，确保用户3秒内识别账号价值
+                建立2个核心触点（昵称+简介），确保用户3秒内识别账号价值
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {TOUCHPOINTS.map((point, index) => {
                 const Icon = point.icon;
-                const fieldKey = point.id === 'avatar' ? 'avatar_url' 
-                  : point.id === 'cover_image' ? 'cover_image_url'
-                  : point.id === 'pinned' ? 'pinned_content'
-                  : point.id === 'ratio' ? 'like_follower_ratio'
-                  : point.id;
+                const fieldKey = point.id;
                 
                 return (
                   <motion.div
@@ -602,7 +578,7 @@ export function IPCreationWizard({ onComplete, onCancel, isLoading }: IPCreation
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <h4 className="font-medium text-foreground">{point.name}</h4>
-                          <span className="text-xs text-foreground-muted">{index + 1}/7</span>
+                          <span className="text-xs text-foreground-muted">{index + 1}/2</span>
                         </div>
                         <p className="text-xs text-foreground-secondary mb-2">{point.desc}</p>
                         <Input
@@ -624,26 +600,16 @@ export function IPCreationWizard({ onComplete, onCancel, isLoading }: IPCreation
                 <span className="text-sm font-medium text-foreground">超级符号完善度</span>
                 <span className="text-sm text-primary-400">
                   {[
-                    formData.avatar_url,
                     formData.nickname,
-                    formData.bio,
-                    formData.cover_image_url,
-                    formData.cover_template,
-                    formData.pinned_content,
-                    formData.like_follower_ratio
-                  ].filter(Boolean).length}/7
+                    formData.bio
+                  ].filter(Boolean).length}/2
                 </span>
               </div>
               <Progress 
                 value={([
-                  formData.avatar_url,
                   formData.nickname,
-                  formData.bio,
-                  formData.cover_image_url,
-                  formData.cover_template,
-                  formData.pinned_content,
-                  formData.like_follower_ratio
-                ].filter(Boolean).length / 7) * 100} 
+                  formData.bio
+                ].filter(Boolean).length / 2) * 100} 
                 size="sm" 
                 variant="gradient" 
               />
@@ -751,8 +717,6 @@ export function IPCreationWizard({ onComplete, onCancel, isLoading }: IPCreation
                   {[
                     { label: '昵称', value: formData.nickname },
                     { label: '简介', value: formData.bio },
-                    { label: '封面模板', value: formData.cover_template },
-                    { label: '赞粉比', value: formData.like_follower_ratio },
                   ].map((item) => (
                     <div key={item.label}>
                       <span className="text-foreground-tertiary">{item.label}：</span>
