@@ -8,7 +8,7 @@ import {
   RefreshCw, 
   Loader2, 
   Brain, 
-  Archive, 
+  Inbox, 
   Star,
   TrendingUp,
   Clock,
@@ -115,7 +115,7 @@ export function MemoryConsolidationPanel({ ipId }: MemoryConsolidationPanelProps
           <div className="text-xs text-gray-500">活跃记忆</div>
         </div>
         <div className="p-3 bg-gray-50 rounded-lg text-center">
-          <Archive className="w-5 h-5 text-gray-500 mx-auto mb-1" />
+          <Inbox className="w-5 h-5 text-gray-500 mx-auto mb-1" />
           <div className="text-lg font-bold text-gray-600">
             {stats.by_level?.archive || 0}
           </div>
