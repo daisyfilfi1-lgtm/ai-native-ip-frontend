@@ -30,8 +30,23 @@ import {
   BookOpen,
   AlertCircle
 } from 'lucide-react';
-import type { FeishuSpaceItem, MemoryFullConfig, PendingLabelsItem, RetrievalConfig, RetrieveResult, UsageLimitsConfig, TagCategory } from '@/types';
+import type { FeishuSpaceItem, FeishuSyncResult, IP, MemoryFullConfig, PendingLabelsItem, RetrievalConfig, RetrieveResult, UsageLimitsConfig, TagCategory } from '@/types';
 import { IngestRequest, RetrieveRequest } from '@/types';
+import { isAxiosError } from 'axios';
+
+/** 展示后端 FastAPI 的 detail（字符串或校验错误数组） */
+function apiErrorDetail(e: unknown): string {
+  if (isAxiosError(e)) {
+    const d = e.response?.data as { detail?: string | { msg?: string }[] } | undefined;
+    if (typeof d?.detail === 'string') return d.detail;
+    if (Array.isArray(d?.detail)) {
+      return d.detail.map((x) => (typeof x === 'object' && x && 'msg' in x ? String((x as { msg?: string }).msg) : JSON.stringify(x))).join('；');
+    }
+    if (e.message) return e.message;
+  }
+  if (e instanceof Error) return e.message;
+  return '请求失败';
+}
 
 const defaultRetrieval: RetrievalConfig = {
   strategy: 'semantic',
@@ -76,10 +91,15 @@ export default function MemoryAgentPage() {
   const [feishuSaving, setFeishuSaving] = useState(false);
   const [feishuSpaces, setFeishuSpaces] = useState<FeishuSpaceItem[]>([]);
   const [feishuSpacesLoading, setFeishuSpacesLoading] = useState(false);
+  const [feishuSpacesError, setFeishuSpacesError] = useState<string | null>(null);
+  const [feishuIpList, setFeishuIpList] = useState<IP[]>([]);
+  const [feishuIpListLoading, setFeishuIpListLoading] = useState(false);
   const [feishuSpaceId, setFeishuSpaceId] = useState('');
   const [feishuIpId, setFeishuIpId] = useState('');
+  const [feishuRememberBinding, setFeishuRememberBinding] = useState(true);
+  const [feishuBindingTip, setFeishuBindingTip] = useState('');
   const [feishuSyncing, setFeishuSyncing] = useState(false);
-  const [feishuSyncResult, setFeishuSyncResult] = useState<{ synced: number; failed: number; errors: string[] } | null>(null);
+  const [feishuSyncResult, setFeishuSyncResult] = useState<FeishuSyncResult | null>(null);
 
   // 高级配置
   const [configIpId, setConfigIpId] = useState('');
@@ -99,7 +119,13 @@ export default function MemoryAgentPage() {
   const [confirmedLabelsJson, setConfirmedLabelsJson] = useState('{}');
   const [labelSubmitError, setLabelSubmitError] = useState('');
 
-  useEffect(() => { setIngestIpId(prev => prev || urlIp); setConfigIpId(prev => prev || urlIp); setRetrieveIpId(prev => prev || urlIp); setTagsIpId(prev => prev || urlIp); }, [urlIp]);
+  useEffect(() => {
+    setIngestIpId((prev) => prev || urlIp);
+    setConfigIpId((prev) => prev || urlIp);
+    setRetrieveIpId((prev) => prev || urlIp);
+    setTagsIpId((prev) => prev || urlIp);
+    setFeishuIpId((prev) => prev || urlIp);
+  }, [urlIp]);
 
   const handleIngest = async () => {
     const ip_id = ingestIpId.trim();
@@ -217,40 +243,118 @@ export default function MemoryAgentPage() {
       .finally(() => setConfigLoading(false));
   }, [activeTab, configIpId]);
 
-  // 飞书：进入 tab 时拉取配置与空间列表
+  // 飞书：进入 tab 时拉取配置、预填 App ID、拉空间列表与 IP 列表
   useEffect(() => {
     if (activeTab !== 'feishu') return;
     (async () => {
+      setFeishuSpacesError(null);
+      setFeishuIpListLoading(true);
+      try {
+        const ips = await api.listIPs();
+        setFeishuIpList(ips);
+      } catch (e) {
+        setFeishuIpList([]);
+        setFeishuSpacesError((prev) => prev || `加载 IP 列表失败：${apiErrorDetail(e)}`);
+      } finally {
+        setFeishuIpListLoading(false);
+      }
+
       try {
         const config = await api.getFeishuConfig();
+        if (config.app_id) setFeishuAppId(config.app_id);
         setFeishuConfigSaved(config.configured);
-        if (config.configured) {
-          setFeishuSpacesLoading(true);
-          const { items } = await api.getFeishuSpaces();
-          setFeishuSpaces(items);
-        } else {
+
+        if (!config.configured) {
           setFeishuSpaces([]);
+          setFeishuSpacesError(
+            '后端未检测到完整飞书凭证（需同时有 App ID 与 Secret）。请在上方填写并点击「保存凭证」，或在 Railway 配置 FEISHU_APP_ID / FEISHU_APP_SECRET。'
+          );
+          return;
         }
-      } catch {
+
+        setFeishuSpacesLoading(true);
+        setFeishuSpacesError(null);
+        const { items } = await api.getFeishuSpaces();
+        setFeishuSpaces(items);
+        if (!items.length) {
+          setFeishuSpacesError(
+            '飞书已连通，但未返回任何知识空间。请检查：① 开放平台已开通 wiki 相关权限；② 应用已加入目标知识库「成员」；③ 知识库类型为飞书 Wiki（非仅云文档根目录）。'
+          );
+        }
+      } catch (e) {
         setFeishuSpaces([]);
+        setFeishuSpacesError(apiErrorDetail(e));
       } finally {
         setFeishuSpacesLoading(false);
       }
     })();
   }, [activeTab, feishuConfigSaved]);
 
+  useEffect(() => {
+    if (activeTab !== 'feishu' || !feishuIpId.trim()) {
+      setFeishuBindingTip('');
+      return;
+    }
+    (async () => {
+      try {
+        const b = await api.getFeishuBinding(feishuIpId.trim());
+        if (b?.space_id) {
+          setFeishuBindingTip(`该 IP 已绑定默认空间：${b.space_name || b.space_id}`);
+          setFeishuSpaceId((prev) => prev || b.space_id);
+        } else {
+          setFeishuBindingTip('该 IP 暂无默认空间映射。');
+        }
+      } catch {
+        setFeishuBindingTip('');
+      }
+    })();
+  }, [activeTab, feishuIpId]);
+
   const handleSaveFeishuConfig = async () => {
     if (!feishuAppId.trim() || !feishuAppSecret.trim()) return;
     setFeishuSaving(true);
+    setFeishuSpacesError(null);
     try {
       await api.saveFeishuConfig({ app_id: feishuAppId.trim(), app_secret: feishuAppSecret.trim() });
       setFeishuConfigSaved(true);
       const { items } = await api.getFeishuSpaces();
       setFeishuSpaces(items);
+      if (!items.length) {
+        setFeishuSpacesError(
+          '凭证已保存，但未返回任何知识空间。请检查 wiki 权限与知识库成员。'
+        );
+      }
     } catch (e) {
       console.error(e);
+      setFeishuSpaces([]);
+      setFeishuSpacesError(apiErrorDetail(e));
+      alert(apiErrorDetail(e));
     } finally {
       setFeishuSaving(false);
+    }
+  };
+
+  const handleRefreshFeishuSpaces = async () => {
+    setFeishuSpacesLoading(true);
+    setFeishuSpacesError(null);
+    try {
+      const config = await api.getFeishuConfig();
+      if (!config.configured) {
+        setFeishuSpacesError('请先保存飞书凭证（App ID + App Secret）。');
+        return;
+      }
+      const { items } = await api.getFeishuSpaces();
+      setFeishuSpaces(items);
+      if (!items.length) {
+        setFeishuSpacesError(
+          '未返回任何知识空间，请确认应用权限与知识库成员（见下方说明）。'
+        );
+      }
+    } catch (e) {
+      setFeishuSpaces([]);
+      setFeishuSpacesError(apiErrorDetail(e));
+    } finally {
+      setFeishuSpacesLoading(false);
     }
   };
 
@@ -259,10 +363,15 @@ export default function MemoryAgentPage() {
     setFeishuSyncing(true);
     setFeishuSyncResult(null);
     try {
+      if (feishuRememberBinding && feishuSpaceId) {
+        const selected = feishuSpaces.find((s) => s.space_id === feishuSpaceId);
+        await api.saveFeishuBinding(feishuIpId.trim(), feishuSpaceId, selected?.name || undefined);
+        setFeishuBindingTip(`已更新默认空间映射：${selected?.name || feishuSpaceId}`);
+      }
       const result = await api.syncFeishu(feishuIpId.trim(), feishuSpaceId || undefined);
       setFeishuSyncResult(result);
     } catch (e) {
-      setFeishuSyncResult({ synced: 0, failed: 0, errors: [(e as Error).message] });
+      setFeishuSyncResult({ synced: 0, failed: 0, errors: [apiErrorDetail(e)] });
     } finally {
       setFeishuSyncing(false);
     }
@@ -660,19 +769,63 @@ export default function MemoryAgentPage() {
                     value={feishuSpaceId}
                     onChange={(e) => setFeishuSpaceId(e.target.value)}
                     options={[
-                      { value: '', label: feishuSpacesLoading ? '加载中...' : (feishuSpaces.length ? '请选择' : '请先保存凭证') },
-                      ...feishuSpaces.map((s) => ({ value: s.space_id, label: s.name || s.space_id })),
+                      {
+                        value: '',
+                        label: feishuSpacesLoading
+                          ? '加载中...'
+                          : feishuSpaces.length
+                            ? '请选择（可不选则同步第一个有权限的空间）'
+                            : '暂无空间（见下方错误说明或点「刷新列表」）',
+                      },
+                      ...feishuSpaces.map((s) => ({ value: s.space_id || '', label: s.name || s.space_id || '(未命名)' })),
                     ]}
                   />
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <Button type="button" variant="secondary" size="sm" onClick={handleRefreshFeishuSpaces} disabled={feishuSpacesLoading}>
+                      {feishuSpacesLoading ? '刷新中...' : '刷新空间列表'}
+                    </Button>
+                  </div>
+                  {feishuSpacesError && (
+                    <div className="mt-3 p-3 rounded-lg bg-accent-red/10 border border-accent-red/25 text-xs text-accent-red whitespace-pre-wrap">
+                      {feishuSpacesError}
+                    </div>
+                  )}
                 </div>
 
-                <Input
-                  label="目标 IP ID"
-                  placeholder="例如：zhangkai_001"
-                  helper="同步的文档将归属到该IP的素材库"
-                  value={feishuIpId}
-                  onChange={(e) => setFeishuIpId(e.target.value)}
+                {feishuIpList.length > 0 ? (
+                  <Select
+                    label="目标 IP"
+                    value={feishuIpId}
+                    onChange={(e) => setFeishuIpId(e.target.value)}
+                    options={[
+                      {
+                        value: '',
+                        label: feishuIpListLoading ? '加载 IP 列表...' : '请选择要写入素材库的 IP',
+                      },
+                      ...feishuIpList.map((ip) => ({
+                        value: ip.ip_id,
+                        label: `${ip.name} (${ip.ip_id})`,
+                      })),
+                    ]}
+                  />
+                ) : (
+                  <Input
+                    label="目标 IP ID"
+                    placeholder="例如：xiaomin1（请先在「IP 管理」创建，或等待列表加载）"
+                    helper="同步的文档将写入该 IP 的 Memory（ip_assets）；须与后端已存在的 ip_id 一致"
+                    value={feishuIpId}
+                    onChange={(e) => setFeishuIpId(e.target.value)}
+                  />
+                )}
+                <Switch
+                  checked={feishuRememberBinding}
+                  onChange={(e) => setFeishuRememberBinding(e.target.checked)}
+                  label="记住「空间 ↔ IP」映射"
+                  description="开启后，本次同步会把当前空间保存为该 IP 的默认空间，下次可直接同步。"
                 />
+                {feishuBindingTip && (
+                  <div className="text-xs text-foreground-tertiary">{feishuBindingTip}</div>
+                )}
 
                 <div className="p-3 rounded-lg bg-accent-yellow/10 border border-accent-yellow/20">
                   <div className="flex items-start gap-2">
@@ -686,6 +839,9 @@ export default function MemoryAgentPage() {
                 {feishuSyncResult && (
                   <div className="p-3 rounded-lg bg-background-tertiary text-sm">
                     <p className="text-foreground">同步结果：成功 {feishuSyncResult.synced} 篇，失败 {feishuSyncResult.failed} 篇</p>
+                    {feishuSyncResult.used_space_id && (
+                      <p className="text-xs text-foreground-tertiary mt-1">实际使用空间：{feishuSyncResult.used_space_id}</p>
+                    )}
                     {feishuSyncResult.errors.length > 0 && (
                       <ul className="mt-1 text-foreground-tertiary text-xs list-disc list-inside">
                         {feishuSyncResult.errors.slice(0, 5).map((err, i) => (

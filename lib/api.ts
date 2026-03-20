@@ -5,10 +5,22 @@ import type {
   AssetsListResponse,
   RetrieveRequest, RetrieveResult,
   MemoryFullConfig,
-  FeishuConfig, FeishuConfigSave, FeishuSpaceItem, FeishuSyncResult,
+  FeishuConfig, FeishuConfigSave, FeishuSpaceItem, FeishuSyncResult, FeishuBinding,
   PendingLabelsItem,
   UpdateLabelsRequest,
   ConfigHistoryItem,
+  // 新增类型
+  HybridRetrieveRequest, HybridRetrieveResult,
+  GraphBuildRequest, GraphBuildResult,
+  GraphRetrieveRequest, GraphRetrieveResult,
+  GraphStatsResult,
+  MemoryConsolidateResult,
+  MemorySummaryResult,
+  CoreMemoryResult,
+  TimeWeightedRequest, TimeWeightedResult,
+  VideoAnalyzeResult,
+  ImageAnalyzeResult,
+  AudioTopicsResult,
 } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
@@ -117,6 +129,22 @@ class ApiClient {
     return response.data;
   }
 
+  async getFeishuBinding(ipId: string): Promise<FeishuBinding | null> {
+    const response = await this.client.get<FeishuBinding | null>('/integrations/feishu/binding', {
+      params: { ip_id: ipId },
+    });
+    return response.data;
+  }
+
+  async saveFeishuBinding(ipId: string, spaceId: string, spaceName?: string): Promise<FeishuBinding> {
+    const response = await this.client.post<FeishuBinding>('/integrations/feishu/binding', {
+      ip_id: ipId,
+      space_id: spaceId,
+      space_name: spaceName || undefined,
+    });
+    return response.data;
+  }
+
   // 待办标签
   async getPendingLabels(ipId: string, limit = 20): Promise<{ items: PendingLabelsItem[] }> {
     const response = await this.client.get<{ items: PendingLabelsItem[] }>('/memory/pending-labels', {
@@ -127,6 +155,127 @@ class ApiClient {
 
   async updateLabels(assetId: string, data: UpdateLabelsRequest): Promise<{ success: boolean }> {
     const response = await this.client.post<{ success: boolean }>(`/memory/labels/${assetId}`, data);
+    return response.data;
+  }
+
+  // ==================== 混合检索 ====================
+  async hybridRetrieve(data: HybridRetrieveRequest): Promise<HybridRetrieveResult> {
+    const response = await this.client.post<HybridRetrieveResult>('/memory/retrieve/hybrid', data);
+    return response.data;
+  }
+
+  // ==================== 记忆Consolidation ====================
+  async consolidateMemory(ipId: string): Promise<MemoryConsolidateResult> {
+    const response = await this.client.post<MemoryConsolidateResult>('/memory/consolidate', null, {
+      params: { ip_id: ipId },
+    });
+    return response.data;
+  }
+
+  async getMemorySummary(ipId: string): Promise<MemorySummaryResult> {
+    const response = await this.client.get<MemorySummaryResult>('/memory/summary', {
+      params: { ip_id: ipId },
+    });
+    return response.data;
+  }
+
+  async getCoreMemory(ipId: string, limit = 10): Promise<CoreMemoryResult> {
+    const response = await this.client.get<CoreMemoryResult>('/memory/core', {
+      params: { ip_id: ipId, limit },
+    });
+    return response.data;
+  }
+
+  async getArchivedMemory(ipId: string, limit = 20): Promise<CoreMemoryResult> {
+    const response = await this.client.get<CoreMemoryResult>('/memory/archived', {
+      params: { ip_id: ipId, limit },
+    });
+    return response.data;
+  }
+
+  async restoreFromArchive(ipId: string, assetId: string): Promise<{ success: boolean }> {
+    const response = await this.client.post<{ success: boolean }>('/memory/restore', {
+      ip_id: ipId,
+      asset_id: assetId,
+    });
+    return response.data;
+  }
+
+  async timeWeightedRetrieve(data: TimeWeightedRequest): Promise<TimeWeightedResult> {
+    const response = await this.client.post<TimeWeightedResult>('/memory/retrieve/time-weighted', data);
+    return response.data;
+  }
+
+  // ==================== Graph RAG ====================
+  async buildGraph(data: GraphBuildRequest): Promise<GraphBuildResult> {
+    const response = await this.client.post<GraphBuildResult>('/graph/build', data);
+    return response.data;
+  }
+
+  async retrieveGraph(data: GraphRetrieveRequest): Promise<GraphRetrieveResult> {
+    const response = await this.client.post<GraphRetrieveResult>('/graph/retrieve', data);
+    return response.data;
+  }
+
+  async getGraphStats(ipId: string): Promise<GraphStatsResult> {
+    const response = await this.client.get<GraphStatsResult>(`/graph/stats/${ipId}`);
+    return response.data;
+  }
+
+  async deleteGraph(ipId: string): Promise<{ success: boolean }> {
+    const response = await this.client.delete<{ success: boolean }>(`/graph/${ipId}`);
+    return response.data;
+  }
+
+  // ==================== 向量检索 ====================
+  async vectorSearch(ipId: string, query: string, topK = 10): Promise<any> {
+    const response = await this.client.post('/vector/search', {
+      ip_id: ipId,
+      query,
+      top_k: topK,
+      use_hybrid: true,
+    });
+    return response.data;
+  }
+
+  async getCollectionInfo(ipId: string): Promise<any> {
+    const response = await this.client.get(`/vector/collection/${ipId}`);
+    return response.data;
+  }
+
+  // ==================== 多模态 ====================
+  async analyzeVideo(videoUrl: string, prompt?: string): Promise<VideoAnalyzeResult> {
+    const response = await this.client.post<VideoAnalyzeResult>('/multimodal/video/analyze', {
+      video_url: videoUrl,
+      prompt,
+    });
+    return response.data;
+  }
+
+  async analyzeImage(imageUrl: string, prompt?: string): Promise<ImageAnalyzeResult> {
+    const response = await this.client.post<ImageAnalyzeResult>('/multimodal/image/analyze', {
+      image_url: imageUrl,
+      prompt,
+    });
+    return response.data;
+  }
+
+  async extractAudioTopics(audioText: string, maxTopics = 5): Promise<AudioTopicsResult> {
+    const response = await this.client.post<AudioTopicsResult>('/multimodal/audio/topics', {
+      audio_text: audioText,
+      max_topics: maxTopics,
+    });
+    return response.data;
+  }
+
+  async createMultimodalAsset(data: {
+    ip_id: string;
+    source_type: 'video' | 'image' | 'audio';
+    source_url: string;
+    content?: string;
+    title?: string;
+  }): Promise<any> {
+    const response = await this.client.post('/multimodal/asset', data);
     return response.data;
   }
 }

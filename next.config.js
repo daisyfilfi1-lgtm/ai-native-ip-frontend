@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // 禁用SWC，使用Babel编译（解决Node.js 25兼容性问题）
+  swcMinify: false,
+  
   reactStrictMode: true,
   
   // 图片配置（Netlify 支持 Next.js 图片优化）

@@ -230,6 +230,13 @@ export interface FeishuSyncResult {
   synced: number;
   failed: number;
   errors: string[];
+  used_space_id?: string | null;
+}
+
+export interface FeishuBinding {
+  ip_id: string;
+  space_id: string;
+  space_name?: string;
 }
 
 // 待办标签 / 更新标签
@@ -254,4 +261,154 @@ export interface ConfigHistoryItem {
   user: string;
   time: string;
   version: number;
+}
+
+// ==================== 混合检索 ====================
+export interface HybridRetrieveRequest {
+  ip_id: string;
+  query: string;
+  top_k?: number;
+  vector_weight?: number;
+  graph_weight?: number;
+  use_vector?: boolean;
+  use_graph?: boolean;
+}
+
+export interface HybridRetrieveResult {
+  query: string;
+  ip_id: string;
+  total: number;
+  results: Array<{
+    asset_id: string;
+    hybrid_score: number;
+    sources: string[];
+    vector_score?: number;
+    graph_score?: number;
+    content?: string;
+    metadata?: Record<string, any>;
+    relation?: string;
+  }>;
+  config: {
+    vector_weight: number;
+    graph_weight: number;
+    fusion_method: string;
+  };
+}
+
+// ==================== 记忆Consolidation ====================
+export interface MemoryConsolidateResult {
+  total_assets: number;
+  promoted: number;
+  demoted: number;
+  archived: number;
+  core_summary?: string;
+}
+
+export interface MemorySummaryResult {
+  stats: {
+    total: number;
+    by_level: Record<string, number>;
+    avg_usage: number;
+  };
+  core_memory: Array<{
+    asset_id: string;
+    title: string;
+    content_snippet: string;
+    usage_count: number;
+  }>;
+  archived_memory: Array<{
+    asset_id: string;
+    title: string;
+    content_snippet: string;
+  }>;
+}
+
+export interface CoreMemoryResult {
+  items: Array<{
+    asset_id: string;
+    title: string;
+    content_snippet: string;
+    usage_count: number;
+    last_used_at?: string;
+  }>;
+}
+
+export interface TimeWeightedRequest {
+  ip_id: string;
+  query: string;
+  top_k?: number;
+  time_weight?: number;
+}
+
+export interface TimeWeightedResult {
+  query: string;
+  total: number;
+  results: Array<{
+    asset_id: string;
+    title: string;
+    content_snippet: string;
+    score: number;
+    level: string;
+    time_score: number;
+    usage_score: number;
+  }>;
+}
+
+// ==================== Graph RAG ====================
+export interface GraphBuildRequest {
+  ip_id: string;
+  force_rebuild?: boolean;
+}
+
+export interface GraphBuildResult {
+  entities: number;
+  relations: number;
+  errors: string[];
+}
+
+export interface GraphRetrieveRequest {
+  ip_id: string;
+  query: string;
+  depth?: number;
+  limit?: number;
+}
+
+export interface GraphRetrieveResult {
+  seed_nodes: Array<{
+    name: string;
+    type: string;
+    description: string;
+  }>;
+  paths: Array<{
+    from: string;
+    relation: string;
+    to: string;
+    context: string;
+  }>;
+}
+
+export interface GraphStatsResult {
+  nodes: Record<string, number>;
+  relations: Record<string, number>;
+  total_nodes: number;
+  total_relations: number;
+}
+
+// ==================== 多模态 ====================
+export interface VideoAnalyzeResult {
+  analysis: string;
+  keyframes_count: number;
+  frames_analyzed: number;
+}
+
+export interface ImageAnalyzeResult {
+  analysis: string;
+}
+
+export interface AudioTopicsResult {
+  topics?: string[];
+  core_points?: string[];
+  sentiment?: string;
+  content_types?: string[];
+  raw_analysis?: string;
 }
