@@ -21,7 +21,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Lightbulb,
-  Clock,
   ThumbsUp,
   MessageSquare,
   UserPlus,
