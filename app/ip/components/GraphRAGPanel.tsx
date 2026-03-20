@@ -13,7 +13,7 @@ import {
   Trash2,
   Database,
   ArrowRight,
-  Network
+  NetworkNode
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { GraphStatsResult, GraphRetrieveResult } from '@/types';
@@ -109,7 +109,7 @@ export function GraphRAGPanel({ ipId }: GraphRAGPanelProps) {
         ) : stats ? (
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 bg-green-50 rounded-lg text-center">
-              <Network className="w-5 h-5 text-green-500 mx-auto mb-1" />
+              <NetworkNode className="w-5 h-5 text-green-500 mx-auto mb-1" />
               <div className="text-lg font-bold text-green-600">
                 {stats.total_nodes}
               </div>
