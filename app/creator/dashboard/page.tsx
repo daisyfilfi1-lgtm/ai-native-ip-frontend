@@ -29,7 +29,12 @@ import {
   AlertCircle,
   CheckCircle2,
   Settings,
-  ChevronRight
+  ChevronRight,
+  Flame,
+  Upload,
+  Keyboard,
+  Wand2,
+  Lightbulb
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -197,6 +202,47 @@ function TopicCardComponent({
   );
 }
 
+// 爆款原创 - 输入方式切换组件
+function InputModeSelector({ 
+  mode, 
+  onChange 
+}: { 
+  mode: 'text' | 'voice' | 'file';
+  onChange: (mode: 'text' | 'voice' | 'file') => void;
+}) {
+  const modes = [
+    { id: 'text' as const, label: '文字输入', icon: Keyboard, desc: '直接输入想法' },
+    { id: 'voice' as const, label: '语音录制', icon: Mic, desc: '边说边录' },
+    { id: 'file' as const, label: '上传文件', icon: Upload, desc: '音频/视频文件' },
+  ];
+
+  return (
+    <div className="grid grid-cols-3 gap-3 mb-6">
+      {modes.map(({ id, label, icon: Icon, desc }) => (
+        <button
+          key={id}
+          onClick={() => onChange(id)}
+          className={cn(
+            "p-4 rounded-xl border-2 transition-all text-left",
+            mode === id
+              ? "border-primary-500 bg-primary-500/10"
+              : "border-border bg-background-tertiary hover:border-border-hover"
+          )}
+        >
+          <div className={cn(
+            "w-10 h-10 rounded-lg flex items-center justify-center mb-3",
+            mode === id ? "bg-primary-500 text-white" : "bg-background-elevated text-foreground-secondary"
+          )}>
+            <Icon className="w-5 h-5" />
+          </div>
+          <div className="font-medium text-foreground text-sm">{label}</div>
+          <div className="text-xs text-foreground-tertiary mt-1">{desc}</div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // 主页面组件
 export default function CreatorDashboardPage() {
   const router = useRouter();
@@ -211,9 +257,16 @@ export default function CreatorDashboardPage() {
   const [remixStyle, setRemixStyle] = useState<StyleType>('angry');
   const [isRemixing, setIsRemixing] = useState(false);
   
-  // 语音输入相关
+  // 爆款原创相关
+  const [viralInputMode, setViralInputMode] = useState<'text' | 'voice' | 'file'>('text');
   const [isRecording, setIsRecording] = useState(false);
-  const [voiceText, setVoiceText] = useState('');
+  const [viralText, setViralText] = useState('');
+  const [isGeneratingViral, setIsGeneratingViral] = useState(false);
+  const [viralConfig, setViralConfig] = useState({
+    scriptTemplate: 'opinion', // opinion | process | knowledge | story
+    viralElements: ['cost', 'crowd'], // 选中的爆款元素
+    targetDuration: 60, // 目标时长（秒）
+  });
 
   useEffect(() => {
     loadData();
@@ -238,7 +291,6 @@ export default function CreatorDashboardPage() {
   const handleGenerateFromTopic = async (topic: TopicCard, style: StyleType) => {
     setGeneratingTopicId(topic.id);
     try {
-      // 调用 Strategy + Memory + Generation + Compliance
       const result = await creatorApi.generateFromTopic(topic.id, style);
       router.push(`/creator/generate?id=${result.id}&type=topic`);
     } catch (error) {
@@ -252,7 +304,6 @@ export default function CreatorDashboardPage() {
     if (!remixUrl.trim()) return;
     setIsRemixing(true);
     try {
-      // 调用 Remix + Memory + Generation + Compliance
       const result = await creatorApi.generateFromRemix(remixUrl, remixStyle);
       router.push(`/creator/generate?id=${result.id}&type=remix`);
     } catch (error) {
@@ -261,15 +312,24 @@ export default function CreatorDashboardPage() {
     }
   };
 
-  // 场景三：语音输入
-  const handleVoiceGenerate = async () => {
-    if (!voiceText.trim()) return;
+  // 场景三：爆款原创（工业化流水线生成）
+  const handleViralGenerate = async () => {
+    if (!viralText.trim()) return;
+    setIsGeneratingViral(true);
     try {
-      // 调用 ASR + Memory + Generation + Compliance
-      const result = await creatorApi.generateFromVoice(voiceText, 'angry');
-      router.push(`/creator/generate?id=${result.id}&type=voice`);
+      // 调用工业化爆款生产流水线
+      const result = await creatorApi.generateViralOriginal({
+        input: viralText,
+        inputMode: viralInputMode,
+        scriptTemplate: viralConfig.scriptTemplate,
+        viralElements: viralConfig.viralElements,
+        targetDuration: viralConfig.targetDuration,
+        style: 'angry'
+      });
+      router.push(`/creator/generate?id=${result.id}&type=viral`);
     } catch (error) {
-      console.error('Voice generate failed:', error);
+      console.error('Viral generate failed:', error);
+      setIsGeneratingViral(false);
     }
   };
 
@@ -364,10 +424,10 @@ export default function CreatorDashboardPage() {
             仿写爆款
             <Badge variant="primary" size="sm">Remix</Badge>
           </TabsTrigger>
-          <TabsTrigger value="voice" className="gap-2">
-            <Mic className="w-4 h-4" />
-            语音创作
-            <Badge variant="primary" size="sm">ASR</Badge>
+          <TabsTrigger value="viral" className="gap-2">
+            <Flame className="w-4 h-4" />
+            爆款原创
+            <Badge variant="success" size="sm">NEW</Badge>
           </TabsTrigger>
         </TabsList>
 
@@ -531,20 +591,23 @@ export default function CreatorDashboardPage() {
           </div>
         </TabsContent>
 
-        {/* 场景三：语音创作 */}
-        <TabsContent value="voice">
-          <div className="max-w-2xl mx-auto">
-            {/* 场景说明 */}
-            <div className="p-4 bg-background-tertiary/50 rounded-xl border border-border mb-6">
+        {/* 场景三：爆款原创（工业化流水线） */}
+        <TabsContent value="viral">
+          <div className="max-w-3xl mx-auto">
+            {/* 场景说明 - 工业化爆款生产流水线 */}
+            <div className="p-4 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-xl border border-orange-500/20 mb-6">
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-accent-cyan/10 flex items-center justify-center flex-shrink-0">
-                  <Mic className="w-5 h-5 text-accent-cyan" />
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center flex-shrink-0">
+                  <Flame className="w-5 h-5 text-white" />
                 </div>
-                <div>
-                  <h3 className="font-medium text-foreground mb-1">语音 → ASR → Memory → Generation</h3>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-medium text-foreground">爆款原创 · 工业化流水线</h3>
+                    <Badge variant="success" size="sm">专业级</Badge>
+                  </div>
                   <p className="text-sm text-foreground-secondary">
-                    说出你的想法，ASR转为文字后，Memory Agent<span className="text-accent-cyan">语义理解并检索相关素材</span>，
-                    最后Generation Agent<span className="text-accent-cyan">扩展成完整文案</span>。
+                    说出你的想法，AI将使用<span className="text-orange-400">八大爆款元素</span>和<span className="text-orange-400">四大脚本模板</span>，
+                    通过7步精加工，为你生成原创爆款。专业级工业化内容生产系统。
                   </p>
                 </div>
               </div>
@@ -552,53 +615,164 @@ export default function CreatorDashboardPage() {
 
             <Card>
               <div className="p-6 space-y-6">
-                {/* 语音输入区域 */}
-                <div className="relative">
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    说出你的想法
-                  </label>
-                  
-                  {/* 录音按钮 */}
-                  <button
-                    onClick={() => setIsRecording(!isRecording)}
-                    className={cn(
-                      "w-full py-8 rounded-xl border-2 border-dashed transition-all flex flex-col items-center gap-3",
-                      isRecording
-                        ? "border-accent-red bg-accent-red/10 animate-pulse"
-                        : "border-border hover:border-primary-500/50 bg-background-tertiary"
-                    )}
-                  >
-                    <div className={cn(
-                      "w-16 h-16 rounded-full flex items-center justify-center transition-all",
-                      isRecording ? "bg-accent-red" : "bg-primary-500"
-                    )}>
-                      <Mic className="w-8 h-8 text-white" />
-                    </div>
-                    <span className={cn(
-                      "font-medium",
-                      isRecording ? "text-accent-red" : "text-foreground"
-                    )}>
-                      {isRecording ? '正在录音... 点击停止' : '点击开始录音'}
-                    </span>
-                  </button>
+                {/* 输入方式切换 */}
+                <InputModeSelector mode={viralInputMode} onChange={setViralInputMode} />
 
-                  {/* 文本编辑区 */}
-                  <div className="mt-4">
-                    <textarea
-                      value={voiceText}
-                      onChange={(e) => setVoiceText(e.target.value)}
-                      placeholder="或者在这里输入你的想法..."
-                      rows={4}
-                      className="w-full p-4 bg-background-tertiary border border-border rounded-xl text-foreground placeholder:text-foreground-muted resize-none focus:outline-none focus:border-primary-500/50"
-                    />
+                {/* 根据输入模式显示不同UI */}
+                <AnimatePresence mode="wait">
+                  {viralInputMode === 'voice' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                    >
+                      {/* 录音按钮 */}
+                      <button
+                        onClick={() => setIsRecording(!isRecording)}
+                        className={cn(
+                          "w-full py-8 rounded-xl border-2 border-dashed transition-all flex flex-col items-center gap-3",
+                          isRecording
+                            ? "border-accent-red bg-accent-red/10 animate-pulse"
+                            : "border-border hover:border-primary-500/50 bg-background-tertiary"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-16 h-16 rounded-full flex items-center justify-center transition-all",
+                          isRecording ? "bg-accent-red" : "bg-primary-500"
+                        )}>
+                          <Mic className="w-8 h-8 text-white" />
+                        </div>
+                        <span className={cn(
+                          "font-medium",
+                          isRecording ? "text-accent-red" : "text-foreground"
+                        )}>
+                          {isRecording ? '正在录音... 点击停止' : '点击开始录音'}
+                        </span>
+                      </button>
+                    </motion.div>
+                  )}
+
+                  {viralInputMode === 'file' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="p-6 rounded-xl border-2 border-dashed border-border bg-background-tertiary text-center"
+                    >
+                      <Upload className="w-10 h-10 mx-auto mb-3 text-foreground-tertiary" />
+                      <p className="text-sm text-foreground-secondary mb-2">拖拽音频/视频文件到此处</p>
+                      <p className="text-xs text-foreground-muted mb-4">支持 MP3, WAV, MP4, MOV (最大50MB)</p>
+                      <Button variant="secondary" size="sm">选择文件</Button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* 文本编辑区（所有模式都有） */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    {viralInputMode === 'text' ? '输入你的想法' : '识别结果 / 补充内容'}
+                  </label>
+                  <textarea
+                    value={viralText}
+                    onChange={(e) => setViralText(e.target.value)}
+                    placeholder={
+                      viralInputMode === 'text' 
+                        ? "例如：我想讲一个关于创业失败但又重新站起来的故事，希望能引起同龄人的共鸣..."
+                        : "识别的文字将显示在这里，你可以编辑补充..."
+                    }
+                    rows={5}
+                    className="w-full p-4 bg-background-tertiary border border-border rounded-xl text-foreground placeholder:text-foreground-muted resize-none focus:outline-none focus:border-primary-500/50"
+                  />
+                </div>
+
+                {/* 工业化流水线配置 */}
+                <div className="p-4 bg-background-tertiary rounded-xl space-y-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Wand2 className="w-4 h-4 text-orange-400" />
+                    <span className="text-sm font-medium text-foreground">流水线配置</span>
+                    <span className="text-xs text-foreground-tertiary ml-auto">智能推荐，可手动调整</span>
+                  </div>
+
+                  {/* 脚本模板选择 */}
+                  <div>
+                    <label className="block text-xs text-foreground-secondary mb-2">脚本模板（四大黄金模板）</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { id: 'opinion', name: '说观点', desc: '吸真粉/高互动', icon: Lightbulb },
+                        { id: 'process', name: '晒过程', desc: '强转化/近变现', icon: RefreshCw },
+                        { id: 'knowledge', name: '教知识', desc: '精准粉/高客单', icon: Brain },
+                        { id: 'story', name: '讲故事', desc: '立人设/高信任', icon: FileText },
+                      ].map((template) => (
+                        <button
+                          key={template.id}
+                          onClick={() => setViralConfig(prev => ({ ...prev, scriptTemplate: template.id }))}
+                          className={cn(
+                            "flex items-center gap-2 p-2 rounded-lg border text-left transition-all",
+                            viralConfig.scriptTemplate === template.id
+                              ? "border-orange-500 bg-orange-500/10"
+                              : "border-border hover:border-border-hover"
+                          )}
+                        >
+                          <template.icon className="w-4 h-4 text-foreground-secondary" />
+                          <div>
+                            <div className="text-sm font-medium text-foreground">{template.name}</div>
+                            <div className="text-xs text-foreground-tertiary">{template.desc}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 爆款元素选择 */}
+                  <div>
+                    <label className="block text-xs text-foreground-secondary mb-2">八大爆款元素（至少选2个）</label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { id: 'cost', name: '成本', emoji: '💰' },
+                        { id: 'crowd', name: '人群', emoji: '👥' },
+                        { id: 'weird', name: '奇葩', emoji: '🤪' },
+                        { id: 'worst', name: '最差', emoji: '⛔' },
+                        { id: 'contrast', name: '反差', emoji: '🔄' },
+                        { id: 'nostalgia', name: '怀旧', emoji: '📷' },
+                        { id: 'hormone', name: '荷尔蒙', emoji: '💖' },
+                        { id: 'top', name: '头牌', emoji: '👑' },
+                      ].map((element) => (
+                        <button
+                          key={element.id}
+                          onClick={() => {
+                            setViralConfig(prev => ({
+                              ...prev,
+                              viralElements: prev.viralElements.includes(element.id)
+                                ? prev.viralElements.filter(e => e !== element.id)
+                                : [...prev.viralElements, element.id]
+                            }));
+                          }}
+                          className={cn(
+                            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all",
+                            viralConfig.viralElements.includes(element.id)
+                              ? "bg-orange-500 text-white"
+                              : "bg-background-elevated text-foreground-secondary hover:bg-background-elevated/80"
+                          )}
+                        >
+                          <span>{element.emoji}</span>
+                          <span>{element.name}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
                 {/* 配置检查 */}
                 <div className="p-4 bg-background-tertiary rounded-xl space-y-2">
                   <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-accent-green" />
-                    <span className="text-accent-green">ASR服务: 已连接 (Whisper API)</span>
+                    {isStrategyReady ? (
+                      <CheckCircle2 className="w-4 h-4 text-accent-green" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-accent-yellow" />
+                    )}
+                    <span className={isStrategyReady ? 'text-accent-green' : 'text-accent-yellow'}>
+                      Strategy Agent: {isStrategyReady ? '八大元素分析已就绪' : '需配置爆款元素'}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     {isMemoryReady ? (
@@ -607,7 +781,17 @@ export default function CreatorDashboardPage() {
                       <AlertCircle className="w-4 h-4 text-accent-yellow" />
                     )}
                     <span className={isMemoryReady ? 'text-accent-green' : 'text-accent-yellow'}>
-                      Memory Agent: {isMemoryReady ? '语义检索已就绪' : '需配置检索策略'}
+                      Memory Agent: {isMemoryReady ? '素材库已就绪' : '需配置检索策略'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    {isGenerationReady ? (
+                      <CheckCircle2 className="w-4 h-4 text-accent-green" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-accent-yellow" />
+                    )}
+                    <span className={isGenerationReady ? 'text-accent-green' : 'text-accent-yellow'}>
+                      Generation Agent: {isGenerationReady ? '四大模板已配置' : '需配置脚本模板'}
                     </span>
                   </div>
                 </div>
@@ -616,12 +800,19 @@ export default function CreatorDashboardPage() {
                 <Button
                   className="w-full"
                   size="lg"
-                  leftIcon={<Sparkles className="w-5 h-5" />}
-                  onClick={handleVoiceGenerate}
-                  disabled={!voiceText.trim() || !isMemoryReady}
+                  leftIcon={isGeneratingViral ? <Loader2 className="w-5 h-5 animate-spin" /> : <Flame className="w-5 h-5" />}
+                  onClick={handleViralGenerate}
+                  isLoading={isGeneratingViral}
+                  disabled={!viralText.trim() || isGeneratingViral || viralConfig.viralElements.length < 2}
                 >
-                  生成文案
+                  {isGeneratingViral ? '工业化流水线加工中...' : '生成爆款原创'}
                 </Button>
+
+                {viralConfig.viralElements.length < 2 && (
+                  <p className="text-xs text-accent-yellow text-center">
+                    请至少选择2个爆款元素，以确保内容的爆款潜力
+                  </p>
+                )}
               </div>
             </Card>
           </div>

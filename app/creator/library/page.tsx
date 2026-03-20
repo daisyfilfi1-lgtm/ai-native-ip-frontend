@@ -16,7 +16,14 @@ import {
   Play,
   Trash2,
   RefreshCw,
-  Filter
+  Filter,
+  BarChart3,
+  Timer,
+  ThumbsUp,
+  MessageSquare,
+  UserPlus,
+  X,
+  Clock
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -54,10 +61,60 @@ const styleEmojis: Record<string, string> = {
   humor: '😄',
 };
 
+// 4维数据诊断配置
+const METRICS_CONFIG = [
+  {
+    key: 'completion_rate',
+    name: '完播率',
+    icon: Timer,
+    threshold: 30,
+    unit: '%',
+    suggestion: '需优化开头钩子',
+    color: 'text-accent-cyan',
+    bgColor: 'bg-accent-cyan/10',
+    borderColor: 'border-accent-cyan/20'
+  },
+  {
+    key: 'like_rate',
+    name: '点赞率',
+    icon: ThumbsUp,
+    threshold: 3,
+    unit: '%',
+    suggestion: '需增强价值密度',
+    color: 'text-accent-pink',
+    bgColor: 'bg-accent-pink/10',
+    borderColor: 'border-accent-pink/20'
+  },
+  {
+    key: 'comment_rate',
+    name: '评论率',
+    icon: MessageSquare,
+    threshold: 1,
+    unit: '%',
+    suggestion: '需增加争议性话题',
+    color: 'text-accent-yellow',
+    bgColor: 'bg-accent-yellow/10',
+    borderColor: 'border-accent-yellow/20'
+  },
+  {
+    key: 'follow_rate',
+    name: '转粉率',
+    icon: UserPlus,
+    threshold: 0.5,
+    unit: '%',
+    suggestion: '需强化人设记忆点',
+    color: 'text-accent-green',
+    bgColor: 'bg-accent-green/10',
+    borderColor: 'border-accent-green/20'
+  }
+];
+
 export default function CreatorLibraryPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [contents, setContents] = useState<LibraryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedContent, setSelectedContent] = useState<LibraryItem | null>(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   useEffect(() => {
     loadContents();
@@ -197,7 +254,15 @@ export default function CreatorLibraryPage() {
                     </Button>
                   )}
                   {content.status === 'published' && (
-                    <Button size="sm" variant="secondary" className="flex-1">
+                    <Button 
+                      size="sm" 
+                      variant="secondary" 
+                      className="flex-1"
+                      onClick={() => {
+                        setSelectedContent(content);
+                        setShowAnalytics(true);
+                      }}
+                    >
                       查看数据
                     </Button>
                   )}
@@ -231,10 +296,168 @@ export default function CreatorLibraryPage() {
           </Link>
         </div>
       )}
+
+      {/* 数据分析弹窗 */}
+      {showAnalytics && selectedContent && (
+        <AnalyticsModal
+          content={selectedContent}
+          onClose={() => {
+            setShowAnalytics(false);
+            setSelectedContent(null);
+          }}
+        />
+      )}
     </CreatorLayout>
   );
 }
 
 function cn(...classes: (string | undefined | false)[]): string {
   return classes.filter(Boolean).join(' ');
+}
+
+// 数据分析弹窗组件
+interface AnalyticsModalProps {
+  content: LibraryItem;
+  onClose: () => void;
+}
+
+function AnalyticsModal({ content, onClose }: AnalyticsModalProps) {
+  // 模拟4维数据（实际应从API获取）
+  const metricsData = {
+    completion_rate: { value: 28, status: 'warning' as const },
+    like_rate: { value: 4.5, status: 'good' as const },
+    comment_rate: { value: 0.6, status: 'warning' as const },
+    follow_rate: { value: 0.4, status: 'danger' as const }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <Card className="relative">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-border">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-600 flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-foreground">内容数据分析</h3>
+                <p className="text-sm text-foreground-secondary">4维健康度诊断</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-background-tertiary transition-colors"
+            >
+              <X className="w-5 h-5 text-foreground-secondary" />
+            </button>
+          </div>
+
+          <div className="p-6 space-y-6">
+            {/* 内容标题 */}
+            <div className="p-4 bg-background-tertiary rounded-xl">
+              <h4 className="font-medium text-foreground line-clamp-2">{content.title}</h4>
+              <p className="text-sm text-foreground-secondary mt-1">
+                发布时间: {content.publishedAt ? new Date(content.publishedAt).toLocaleString('zh-CN') : '-'}
+              </p>
+            </div>
+
+            {/* 4维诊断 */}
+            <div>
+              <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-primary-400" />
+                4维健康度诊断
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                {METRICS_CONFIG.map((metric) => {
+                  const Icon = metric.icon;
+                  const data = metricsData[metric.key as keyof typeof metricsData];
+                  const isWarning = data.value < metric.threshold;
+                  
+                  return (
+                    <div
+                      key={metric.key}
+                      className={`p-4 rounded-xl border ${
+                        isWarning ? metric.borderColor + ' ' + metric.bgColor : 'bg-accent-green/10 border-accent-green/20'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon className={`w-4 h-4 ${isWarning ? metric.color : 'text-accent-green'}`} />
+                        <span className="text-sm font-medium text-foreground">{metric.name}</span>
+                      </div>
+                      <div className={`text-2xl font-bold mb-1 ${isWarning ? metric.color : 'text-accent-green'}`}>
+                        {data.value}{metric.unit}
+                      </div>
+                      <div className="text-xs text-foreground-tertiary">
+                        目标 ≥ {metric.threshold}{metric.unit}
+                      </div>
+                      {isWarning && (
+                        <div className={`mt-2 text-xs ${metric.color}`}>
+                          💡 {metric.suggestion}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 发布时间分析 */}
+            <div>
+              <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-400" />
+                发布时间分析
+              </h4>
+              <div className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-foreground">实际发布时间</span>
+                  <span className="text-sm font-medium text-foreground">
+                    {content.publishedAt ? new Date(content.publishedAt).getHours() + ':00' : '-'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-foreground">建议发布时间</span>
+                  <span className="text-sm font-medium text-accent-green">
+                    20:00-22:00 (职场类黄金时段)
+                  </span>
+                </div>
+                <p className="text-xs text-foreground-secondary mt-2">
+                  建议下次在黄金时段发布，可获得30%+的初始流量提升
+                </p>
+              </div>
+            </div>
+
+            {/* 优化建议 */}
+            <div>
+              <h4 className="font-semibold text-foreground mb-4">优化建议</h4>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start gap-2 text-foreground-secondary">
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent-yellow mt-1.5 flex-shrink-0" />
+                  完播率28%低于30%标准，建议前3秒加入强钩子
+                </li>
+                <li className="flex items-start gap-2 text-foreground-secondary">
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent-yellow mt-1.5 flex-shrink-0" />
+                  转粉率0.4%低于0.5%标准，建议结尾强化人设记忆点
+                </li>
+                <li className="flex items-start gap-2 text-foreground-secondary">
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent-cyan mt-1.5 flex-shrink-0" />
+                  点赞率4.5%表现良好，继续保持当前内容密度
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex justify-end gap-3 p-6 border-t border-border">
+            <Button variant="ghost" onClick={onClose}>
+              关闭
+            </Button>
+            <Button>
+              导出报告
+            </Button>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
 }

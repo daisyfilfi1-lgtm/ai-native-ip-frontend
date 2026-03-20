@@ -224,8 +224,123 @@ export interface GenerateResponse {
   error?: string;
 }
 
+// ===== 爆款原创配置 =====
+// 对应工业化爆款生产流水线
+
+// 八大爆款元素
+export const VIRAL_ELEMENTS = [
+  { id: 'cost', name: '成本', emoji: '💰', desc: '低成本/高成本' },
+  { id: 'crowd', name: '人群', emoji: '👥', desc: '细分/特定人群' },
+  { id: 'weird', name: '奇葩', emoji: '🤪', desc: '反常/猎奇' },
+  { id: 'worst', name: '最差', emoji: '⛔', desc: '避坑/负面' },
+  { id: 'contrast', name: '反差', emoji: '🔄', desc: '前后对比' },
+  { id: 'nostalgia', name: '怀旧', emoji: '📷', desc: '情感共鸣' },
+  { id: 'hormone', name: '荷尔蒙', emoji: '💖', desc: '颜值/情感' },
+  { id: 'top', name: '头牌', emoji: '👑', desc: '第一/权威' },
+] as const;
+
+export type ViralElementId = typeof VIRAL_ELEMENTS[number]['id'];
+
+// 四大黄金脚本模板
+export const SCRIPT_TEMPLATES = [
+  {
+    id: 'opinion',
+    name: '说观点',
+    desc: '吸真粉/高互动',
+    structure: ['钩子(3秒)', '论据(30秒)', '升华(5秒)'],
+    keywords: ['我认为', '真相是', '揭秘'],
+    bestFor: '建立专业人设，引发评论区讨论'
+  },
+  {
+    id: 'process',
+    name: '晒过程',
+    desc: '强转化/近变现',
+    structure: ['过程展示', '情绪铺垫', '结果呈现'],
+    contentTypes: ['服务全流程', '产品测评', '任务挑战', '事件体验'],
+    hookTechniques: ['反常识开头', '进度条预告', '身份悬念'],
+    bestFor: '展示服务/产品交付过程，建立信任促成交'
+  },
+  {
+    id: 'knowledge',
+    name: '教知识',
+    desc: '精准粉/高客单',
+    structure: ['问题呈现', '原因分析', '解决步骤', '总结强调'],
+    topicMethods: ['解题型', '案例型', '推荐型', '揭秘型', '颠覆型'],
+    bestFor: '知识付费引流，筛选高意向用户'
+  },
+  {
+    id: 'story',
+    name: '讲故事',
+    desc: '立人设/高信任',
+    structure: ['困境(共情)', '转折(希望)', '方法(价值)', '结果(证明)'],
+    prototypes: ['小有成就型', '平凡英雄型', '重新成功型'],
+    bestFor: '高客单产品成交前，建立深度情感连接'
+  }
+] as const;
+
+export type ScriptTemplateId = typeof SCRIPT_TEMPLATES[number]['id'];
+
+// 情感曲线模板
+export const EMOTION_CURVES = [
+  {
+    id: 'angerHope',
+    name: '愤怒-希望型',
+    curve: ['痛点激怒(20%)', '情绪共鸣(30%)', '解决方案(40%)', '行动号召(10%)'],
+    bestFor: '解决方案类内容'
+  },
+  {
+    id: 'curiosityShock',
+    name: '好奇-震惊型',
+    curve: ['悬念设置(25%)', '逐步揭秘(35%)', '震惊事实(30%)', '引导互动(10%)'],
+    bestFor: '揭秘类内容'
+  },
+  {
+    id: 'problemSolution',
+    name: '问题-解决型',
+    curve: ['问题呈现(20%)', '原因分析(30%)', '解决步骤(40%)', '总结强调(10%)'],
+    bestFor: '干货教程类内容'
+  },
+  {
+    id: 'empathyInspire',
+    name: '共情-励志型',
+    curve: ['困境共情(25%)', '转折希望(25%)', '方法价值(35%)', '结果证明(15%)'],
+    bestFor: '个人故事类内容'
+  }
+] as const;
+
+export type EmotionCurveId = typeof EMOTION_CURVES[number]['id'];
+
+// 选题评分卡（工业化标准）
+export interface TopicScoreCard {
+  targetAccuracy: number;    // 目标人群精准度 (0-2分)
+  painIntensity: number;     // 痛点强度 (0-2分)
+  viralElements: number;     // 爆款元素数量 (每个+1分，最高3分)
+  productionCost: number;    // 制作难度 (-1至1分)
+  monetizationFit: number;   // 变现关联度 (0-2分)
+  totalScore: number;        // 总分 (≥7分才执行)
+}
+
+// 爆款原创请求参数
+export interface ViralOriginalRequest {
+  input: string;                    // 用户输入内容
+  inputMode: 'text' | 'voice' | 'file';  // 输入方式
+  scriptTemplate: ScriptTemplateId; // 脚本模板
+  viralElements: ViralElementId[];  // 选中的爆款元素
+  targetDuration: number;           // 目标时长（秒）
+  style: StyleType;                 // 风格
+}
+
+// 工业化流水线进度
+export interface ViralPipelineProgress {
+  step: number;
+  totalSteps: number;
+  stepName: string;
+  description: string;
+  percentage: number;
+}
+
 // ===== 工作台场景 =====
-export type CreatorScenario = 'recommended' | 'remix' | 'voice';
+export type CreatorScenario = 'recommended' | 'remix' | 'viral';
 
 export interface ScenarioConfig {
   id: CreatorScenario;
@@ -254,11 +369,11 @@ export const SCENARIO_CONFIG: ScenarioConfig[] = [
     icon: 'RefreshCw'
   },
   {
-    id: 'voice',
-    name: '语音创作',
-    description: 'ASR语音识别 + Memory Agent语义检索 + 智能扩写',
-    agentChain: ['ASR', 'Memory', 'Generation', 'Compliance'],
-    configRequired: ['memory', 'generation', 'compliance'],
-    icon: 'Mic'
+    id: 'viral',
+    name: '爆款原创',
+    description: '工业化流水线：八大元素 + 四大模板 + 七步精加工',
+    agentChain: ['Strategy', 'Memory', 'Remix', 'Generation', 'Compliance'],
+    configRequired: ['strategy', 'memory', 'remix', 'generation', 'compliance'],
+    icon: 'Flame'
   }
 ];

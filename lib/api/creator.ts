@@ -340,7 +340,7 @@ export const creatorApi = {
     });
   },
 
-  // ===== 场景三：语音创作 =====
+  // ===== 场景三：语音创作（已升级为爆款原创）=====
   async generateFromVoice(text: string, style: StyleType): Promise<GenerateResult> {
     console.log('[API] Generate from voice:', { text, style });
     
@@ -357,6 +357,34 @@ export const creatorApi = {
     return apiFetch('/api/creator/generate/voice', {
       method: 'POST',
       body: JSON.stringify({ text, style })
+    });
+  },
+
+  // ===== 场景三：爆款原创（工业化流水线）=====
+  async generateViralOriginal(params: {
+    input: string;
+    inputMode: 'text' | 'voice' | 'file';
+    scriptTemplate: string;
+    viralElements: string[];
+    targetDuration: number;
+    style: StyleType;
+  }): Promise<GenerateResult> {
+    console.log('[API] Generate viral original:', params);
+    
+    if (USE_MOCK) {
+      // 模拟工业化流水线7步精加工过程
+      await new Promise(resolve => setTimeout(resolve, 2500));
+      return {
+        id: 'gen_viral_001',
+        status: 'completed',
+        progress: 100,
+        estimatedTime: 0
+      };
+    }
+    
+    return apiFetch('/api/creator/generate/viral', {
+      method: 'POST',
+      body: JSON.stringify(params)
     });
   },
 

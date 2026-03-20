@@ -22,7 +22,9 @@ import {
   Loader2,
   Check,
   FileText,
-  Library
+  Library,
+  Clock,
+  TrendingUp
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -66,9 +68,9 @@ function GeneratePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   
-  // 从URL获取参数：id(生成ID) 和 type(生成类型: topic/remix/voice)
+  // 从URL获取参数：id(生成ID) 和 type(生成类型: topic/remix/voice/viral)
   const id = searchParams.get('id');
-  const type = searchParams.get('type') as 'topic' | 'remix' | 'voice' | null;
+  const type = searchParams.get('type') as 'topic' | 'remix' | 'voice' | 'viral' | null;
   
   const [currentStyle, setCurrentStyle] = useState<StyleType>('angry');
   const [isGenerating, setIsGenerating] = useState(true);
@@ -484,6 +486,35 @@ function GeneratePageContent() {
 
             {/* Sidebar */}
             <div className="space-y-4">
+              {/* 爆款原创特殊展示 */}
+              {type === 'viral' && content.viralElements && (
+                <Card>
+                  <div className="p-4">
+                    <h3 className="font-semibold text-foreground mb-3">🎯 八大爆款元素</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {content.viralElements.map((element: string) => (
+                        <Badge key={element} variant="primary" size="sm">
+                          {element}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+              )}
+              
+              {type === 'viral' && content.scriptTemplate && (
+                <Card>
+                  <div className="p-4">
+                    <h3 className="font-semibold text-foreground mb-3">📝 脚本模板</h3>
+                    <div className="text-sm text-foreground-secondary">
+                      {content.scriptTemplate === 'opinion' && '说观点：钩子→论据→升华'}
+                      {content.scriptTemplate === 'process' && '晒过程：展示→情绪→结果'}
+                      {content.scriptTemplate === 'knowledge' && '教知识：问题→原因→解决'}
+                      {content.scriptTemplate === 'story' && '讲故事：困境→转折→方法→结果'}
+                    </div>
+                  </div>
+                </Card>
+              )}
               {/* Compliance Check */}
               <Card>
                 <div className="p-4">
@@ -572,22 +603,75 @@ function GeneratePageContent() {
                 </div>
               </Card>
 
+              {/* 黄金发布时间建议 */}
+              <Card>
+                <div className="p-4">
+                  <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-primary-400" />
+                    黄金发布时间
+                  </h3>
+                  <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 mb-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-lg">💼</span>
+                      <span className="font-medium text-foreground">职场类内容</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { time: '8:00-9:00', label: '早高峰' },
+                        { time: '12:00-13:00', label: '午休' },
+                        { time: '20:00-22:00', label: '晚间' }
+                      ].map((slot) => (
+                        <button
+                          key={slot.time}
+                          className="px-3 py-1.5 rounded-lg bg-background-elevated hover:bg-primary-500/20 border border-border hover:border-primary-500/50 transition-all text-sm"
+                        >
+                          <span className="text-foreground">{slot.time}</span>
+                          <span className="text-foreground-tertiary text-xs ml-1">{slot.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-xs text-foreground-tertiary">
+                    选择合适的发布时间可提升30%+的初始流量，建议提前5分钟发布
+                  </p>
+                </div>
+              </Card>
+
               {/* Tips */}
               <Card>
                 <div className="p-4">
-                  <h3 className="font-semibold text-foreground mb-3">优化建议</h3>
+                  <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-accent-yellow" />
+                    数据优化建议
+                  </h3>
                   <ul className="space-y-3 text-sm text-foreground-secondary">
                     <li className="flex items-start gap-2">
-                      <Sparkles className="w-4 h-4 text-accent-yellow mt-0.5 flex-shrink-0" />
-                      前3秒加入具体数字，完播率可提升20%
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent-cyan mt-1.5 flex-shrink-0" />
+                      <span>
+                        <strong className="text-foreground">完播率优化：</strong>
+                        前3秒加入具体数字或争议观点，可提升20%完播率
+                      </span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <Sparkles className="w-4 h-4 text-accent-yellow mt-0.5 flex-shrink-0" />
-                      CTA部分增加互动引导，评论率会更高
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent-pink mt-1.5 flex-shrink-0" />
+                      <span>
+                        <strong className="text-foreground">点赞率优化：</strong>
+                        在内容中段增加价值密度，每15秒一个信息点
+                      </span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <Sparkles className="w-4 h-4 text-accent-yellow mt-0.5 flex-shrink-0" />
-                      故事部分可以再具体一些，增加可信度
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent-yellow mt-1.5 flex-shrink-0" />
+                      <span>
+                        <strong className="text-foreground">评论率优化：</strong>
+                        CTA部分增加争议性话题或提问，引导互动
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent-green mt-1.5 flex-shrink-0" />
+                      <span>
+                        <strong className="text-foreground">转粉率优化：</strong>
+                        结尾强化人设记忆点，使用固定slogan或视觉符号
+                      </span>
                     </li>
                   </ul>
                 </div>

@@ -6,6 +6,31 @@ export interface IP {
   status: 'active' | 'inactive' | 'suspended';
   created_at?: string;
   updated_at?: string;
+  
+  // 账号体系：超级符号识别系统（7个标准化触点）
+  avatar_url?: string;
+  nickname?: string;
+  bio?: string;
+  cover_image_url?: string;
+  cover_template?: string;
+  pinned_content?: string;
+  like_follower_ratio?: string;
+  
+  // 商业定位：变现前置原则
+  monetization_model?: string;
+  target_audience?: string;
+  content_direction?: string;
+  unique_value_prop?: string;
+  
+  // 定位交叉点：擅长 × 热爱 × 市场需求
+  expertise?: string;
+  passion?: string;
+  market_demand?: string;
+  
+  // 变现象限：产品/服务 × 客单价 × 复购率
+  product_service?: string;
+  price_range?: string;
+  repurchase_rate?: string;
 }
 
 export interface CreateIPRequest {
@@ -13,6 +38,31 @@ export interface CreateIPRequest {
   name: string;
   owner_user_id: string;
   status?: string;
+  
+  // 账号体系字段
+  avatar_url?: string;
+  nickname?: string;
+  bio?: string;
+  cover_image_url?: string;
+  cover_template?: string;
+  pinned_content?: string;
+  like_follower_ratio?: string;
+  
+  // 商业定位字段
+  monetization_model?: string;
+  target_audience?: string;
+  content_direction?: string;
+  unique_value_prop?: string;
+  
+  // 定位交叉点字段
+  expertise?: string;
+  passion?: string;
+  market_demand?: string;
+  
+  // 变现象限字段
+  product_service?: string;
+  price_range?: string;
+  repurchase_rate?: string;
 }
 
 // Memory Types
