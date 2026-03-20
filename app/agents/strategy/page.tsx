@@ -20,10 +20,6 @@ import {
   Flame,
   Users,
   AlertTriangle,
-  ArrowRightLeft,
-  Calendar,
-  Heart,
-  Crown,
   Sparkles
 } from 'lucide-react';
 
