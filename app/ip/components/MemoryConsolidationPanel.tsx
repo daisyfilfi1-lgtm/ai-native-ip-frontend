@@ -9,7 +9,7 @@ import {
   RefreshCw, 
   Loader2, 
   Brain, 
-  Archive, 
+  Inbox, 
   Star,
   TrendingUp,
   Clock,
