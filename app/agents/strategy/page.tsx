@@ -139,7 +139,7 @@ export default function StrategyAgentPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <h4 className="font-semibold text-foreground">{element.name}</h4>
-                          <Switch defaultChecked size="sm" />
+                          <Switch defaultChecked size={20} />
                         </div>
                         <p className="text-sm text-foreground-secondary mb-2">{element.desc}</p>
                         
