@@ -23,7 +23,6 @@ import {
   Lightbulb,
   ThumbsUp,
   MessageSquare,
-  Users,
   Target
 } from 'lucide-react';
 
