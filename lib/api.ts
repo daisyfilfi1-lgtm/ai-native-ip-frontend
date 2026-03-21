@@ -23,7 +23,9 @@ import type {
   AudioTopicsResult,
 } from '@/types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL 
+  ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1` 
+  : '/api/v1';
 
 class ApiClient {
   private client: AxiosInstance;
