@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card } from '@/components/ui/Card';
@@ -32,6 +32,11 @@ export default function IPDetailPage() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<any>(null);
+  const [assetsRefreshKey, setAssetsRefreshKey] = useState(0);
+
+  const refreshAssetsList = useCallback(() => {
+    setAssetsRefreshKey((k) => k + 1);
+  }, []);
 
   useEffect(() => {
     if (ipId) {
@@ -180,12 +185,12 @@ export default function IPDetailPage() {
 
         {/* 本地上传 */}
         <TabsContent value="upload">
-          <UploadPanel ipId={ipId} onUploadComplete={loadAssets} />
+          <UploadPanel ipId={ipId} onUploadComplete={refreshAssetsList} />
         </TabsContent>
 
         {/* 素材库 */}
         <TabsContent value="assets">
-          <AssetsPanel ipId={ipId} />
+          <AssetsPanel ipId={ipId} refreshKey={assetsRefreshKey} />
         </TabsContent>
       </Tabs>
     </MainLayout>
@@ -193,16 +198,12 @@ export default function IPDetailPage() {
 }
 
 // 素材库组件
-function AssetsPanel({ ipId }: { ipId: string }) {
+function AssetsPanel({ ipId, refreshKey }: { ipId: string; refreshKey: number }) {
   const [assets, setAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
 
-  useEffect(() => {
-    loadAssets();
-  }, [ipId]);
-
-  const loadAssets = async () => {
+  const loadAssets = useCallback(async () => {
     setLoading(true);
     try {
       const data = await api.getAssets(ipId, 20, 0);
@@ -213,7 +214,11 @@ function AssetsPanel({ ipId }: { ipId: string }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [ipId]);
+
+  useEffect(() => {
+    loadAssets();
+  }, [loadAssets, refreshKey]);
 
   if (loading) {
     return (

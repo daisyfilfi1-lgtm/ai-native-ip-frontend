@@ -12,7 +12,6 @@ import {
   Copy, 
   Check,
   TrendingUp,
-  FileEdit,
   PenLine,
   Zap
 } from 'lucide-react';
@@ -230,7 +229,7 @@ export function ScenarioOnePanel({ ipId }: { ipId: string }) {
 export function ScenarioTwoPanel({ ipId }: { ipId: string }) {
   const [competitorContent, setCompetitorContent] = useState('');
   const [platform, setPlatform] = useState('');
-  const [rewriteLevel, setRewriteLevel] = useState('medium');
+  const [rewriteLevel, setRewriteLevel] = useState<'light' | 'medium' | 'heavy'>('medium');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ContentResult | null>(null);
   const [copied, setCopied] = useState(false);
@@ -261,7 +260,7 @@ export function ScenarioTwoPanel({ ipId }: { ipId: string }) {
     <div className="space-y-4">
       <Card className="p-4">
         <div className="flex items-center gap-2 mb-4">
-          <FileEdit className="w-5 h-5 text-blue-500" />
+          <PenLine className="w-5 h-5 text-blue-500" />
           <h3 className="font-semibold">竞品爆款改写</h3>
         </div>
 
@@ -295,7 +294,9 @@ export function ScenarioTwoPanel({ ipId }: { ipId: string }) {
             <label className="block text-sm text-gray-500 mb-1">改写程度</label>
             <select 
               value={rewriteLevel}
-              onChange={(e) => setRewriteLevel(e.target.value)}
+              onChange={(e) =>
+                setRewriteLevel(e.target.value as 'light' | 'medium' | 'heavy')
+              }
               className="w-full p-2 border rounded-lg"
             >
               <option value="light">轻度改写（保留结构）</option>
@@ -317,7 +318,7 @@ export function ScenarioTwoPanel({ ipId }: { ipId: string }) {
             </>
           ) : (
             <>
-              <FileEdit className="w-4 h-4 mr-2" />
+              <PenLine className="w-4 h-4 mr-2" />
               分析爆款 + IP改写
             </>
           )}
@@ -362,7 +363,7 @@ export function ScenarioTwoPanel({ ipId }: { ipId: string }) {
 export function ScenarioThreePanel({ ipId }: { ipId: string }) {
   const [topic, setTopic] = useState('');
   const [keyPoints, setKeyPoints] = useState('');
-  const [length, setLength] = useState('medium');
+  const [length, setLength] = useState<'short' | 'medium' | 'long'>('medium');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ContentResult | null>(null);
   const [copied, setCopied] = useState(false);
@@ -425,7 +426,9 @@ export function ScenarioThreePanel({ ipId }: { ipId: string }) {
           <label className="block text-sm text-gray-500 mb-1">内容长度</label>
           <select 
             value={length}
-            onChange={(e) => setLength(e.target.value)}
+            onChange={(e) =>
+              setLength(e.target.value as 'short' | 'medium' | 'long')
+            }
             className="w-full p-2 border rounded-lg"
           >
             <option value="short">短篇 (150-250字)</option>
@@ -495,7 +498,7 @@ export function ContentGeneratorPanel({ ipId }: { ipId: string }) {
           热点选题
         </TabsTrigger>
         <TabsTrigger value="two">
-          <FileEdit className="w-4 h-4 mr-2" />
+          <PenLine className="w-4 h-4 mr-2" />
           竞品改写
         </TabsTrigger>
         <TabsTrigger value="three">
