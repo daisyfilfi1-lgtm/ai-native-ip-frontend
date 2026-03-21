@@ -34,13 +34,20 @@ import type { FeishuSpaceItem, FeishuSyncResult, IP, MemoryFullConfig, PendingLa
 import { IngestRequest, RetrieveRequest } from '@/types';
 import { isAxiosError } from 'axios';
 
-/** 展示后端 FastAPI 的 detail（字符串或校验错误数组） */
+/** 展示后端 FastAPI 的 detail（字符串或校验错误数组），优先显示业务错误信息 */
 function apiErrorDetail(e: unknown): string {
   if (isAxiosError(e)) {
-    const d = e.response?.data as { detail?: string | { msg?: string }[] } | undefined;
-    if (typeof d?.detail === 'string') return d.detail;
-    if (Array.isArray(d?.detail)) {
-      return d.detail.map((x) => (typeof x === 'object' && x && 'msg' in x ? String((x as { msg?: string }).msg) : JSON.stringify(x))).join('；');
+    const d = e.response?.data;
+    if (d && typeof d === 'object' && !Array.isArray(d)) {
+      const detail = (d as { detail?: string | { msg?: string }[] }).detail;
+      if (typeof detail === 'string') return detail;
+      if (Array.isArray(detail)) {
+        return detail.map((x) => (typeof x === 'object' && x && 'msg' in x ? String((x as { msg?: string }).msg) : JSON.stringify(x))).join('；');
+      }
+    }
+    // 502/503 等时避免只显示 "Request failed with status code 502"
+    if (e.response?.status && e.response.status >= 500 && e.message?.includes('status code')) {
+      return `服务暂时不可用 (${e.response.status})，请稍后重试。若为飞书同步，请检查凭证、知识库成员权限及网络。`;
     }
     if (e.message) return e.message;
   }

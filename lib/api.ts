@@ -278,6 +278,69 @@ class ApiClient {
     const response = await this.client.post('/multimodal/asset', data);
     return response.data;
   }
-}
 
-export const api = new ApiClient();
+  // ==================== 内容生成 APIs ====================
+  content = {
+    /**
+     * 场景一：热点选题 + 一键生成
+     */
+    scenarioOne: async (
+      ipId: string,
+      platform: string,
+      weights: {
+        relevance: number;
+        hotness: number;
+        competition: number;
+        conversion: number;
+      },
+      count: number = 5
+    ): Promise<any[]> => {
+      const response = await this.client.post('/content/scenario/one', {
+        ip_id: ipId,
+        platform,
+        weight_relevance: weights.relevance,
+        weight_hotness: weights.hotness,
+        weight_competition: weights.competition,
+        weight_conversion: weights.conversion,
+        count,
+      });
+      return response.data;
+    },
+
+    /**
+     * 场景二：竞品爆款改写
+     */
+    scenarioTwo: async (
+      ipId: string,
+      competitorContent: string,
+      competitorPlatform?: string,
+      rewriteLevel: 'light' | 'medium' | 'heavy' = 'medium'
+    ): Promise<any> => {
+      const response = await this.client.post('/content/scenario/two', {
+        ip_id: ipId,
+        competitor_content: competitorContent,
+        competitor_platform: competitorPlatform,
+        rewrite_level: rewriteLevel,
+      });
+      return response.data;
+    },
+
+    /**
+     * 场景三：自定义原创
+     */
+    scenarioThree: async (
+      ipId: string,
+      topic: string,
+      keyPoints?: string[],
+      length: 'short' | 'medium' | 'long' = 'medium'
+    ): Promise<any> => {
+      const response = await this.client.post('/content/scenario/three', {
+        ip_id: ipId,
+        topic,
+        key_points: keyPoints,
+        length,
+      });
+      return response.data;
+    },
+  };
+}

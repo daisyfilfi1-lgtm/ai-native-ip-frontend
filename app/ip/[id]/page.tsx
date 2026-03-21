@@ -16,11 +16,13 @@ import {
   Search,
   Layers,
   Database,
-  FileText
+  FileText,
+  PenTool,
+  Upload
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { IP } from '@/types';
-import { MemorySearchPanel, MemoryConsolidationPanel, GraphRAGPanel, MultimodalPanel } from '../components';
+import { MemorySearchPanel, MemoryConsolidationPanel, GraphRAGPanel, MultimodalPanel, ContentGeneratorPanel, UploadPanel } from '../components';
 
 export default function IPDetailPage() {
   const params = useParams();
@@ -137,6 +139,14 @@ export default function IPDetailPage() {
             <Sparkles className="w-4 h-4 mr-2" />
             多模态
           </TabsTrigger>
+          <TabsTrigger value="content">
+            <PenTool className="w-4 h-4 mr-2" />
+            内容生成
+          </TabsTrigger>
+          <TabsTrigger value="upload">
+            <Upload className="w-4 h-4 mr-2" />
+            本地上传
+          </TabsTrigger>
           <TabsTrigger value="assets">
             <FileText className="w-4 h-4 mr-2" />
             素材库
@@ -161,6 +171,16 @@ export default function IPDetailPage() {
         {/* 多模态 */}
         <TabsContent value="multimodal">
           <MultimodalPanel ipId={ipId} />
+        </TabsContent>
+
+        {/* 内容生成 */}
+        <TabsContent value="content">
+          <ContentGeneratorPanel ipId={ipId} />
+        </TabsContent>
+
+        {/* 本地上传 */}
+        <TabsContent value="upload">
+          <UploadPanel ipId={ipId} onUploadComplete={loadAssets} />
         </TabsContent>
 
         {/* 素材库 */}
