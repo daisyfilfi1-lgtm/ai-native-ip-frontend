@@ -64,8 +64,28 @@ class ApiClient {
 
   // Memory APIs
   async ingestMemory(data: IngestRequest): Promise<IngestResponse> {
-    const response = await this.client.post<IngestResponse>('/memory/ingest', data);
-    return response.data;
+    const maxAttempts = 3;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const response = await this.client.post<IngestResponse>('/memory/ingest', data);
+        return response.data;
+      } catch (err) {
+        const ax = err as AxiosError;
+        const status = ax.response?.status;
+        const retryable =
+          status === 502 ||
+          status === 503 ||
+          status === 504 ||
+          ax.code === 'ECONNABORTED' ||
+          ax.code === 'ERR_NETWORK';
+        if (retryable && attempt < maxAttempts - 1) {
+          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw new Error('ingestMemory failed');
   }
 
   /** 上传素材文件，返回 file_id 供 ingest 传入 local_file_id */
@@ -89,9 +109,32 @@ class ApiClient {
     return response.data;
   }
 
+  /**
+   * 轮询任务状态。对 502/503/504（网关/部署瞬时故障）自动重试，减轻 Netlify→Railway 代理抖动。
+   */
   async getIngestStatus(taskId: string): Promise<IngestStatus> {
-    const response = await this.client.get<IngestStatus>(`/memory/ingest/${taskId}`);
-    return response.data;
+    const maxAttempts = 8;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const response = await this.client.get<IngestStatus>(`/memory/ingest/${taskId}`);
+        return response.data;
+      } catch (err) {
+        const ax = err as AxiosError;
+        const status = ax.response?.status;
+        const retryable =
+          status === 502 ||
+          status === 503 ||
+          status === 504 ||
+          ax.code === 'ECONNABORTED' ||
+          ax.code === 'ERR_NETWORK';
+        if (retryable && attempt < maxAttempts - 1) {
+          await new Promise((r) => setTimeout(r, 600 + attempt * 350));
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw new Error('getIngestStatus failed');
   }
 
   async getAssets(ipId: string, limit = 20, offset = 0): Promise<AssetsListResponse> {
