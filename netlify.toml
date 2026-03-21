@@ -1,33 +1,40 @@
-[build]
-  command = "npm run build"
-  publish = ".next"
-
-[build.environment]
-  NODE_VERSION = "18"
-  # 可选：覆盖默认 Railway 地址（与 next.config.js 中 RAILWAY_API_ORIGIN 一致）
-  # RAILWAY_API_ORIGIN = "https://ai-native-ip-production.up.railway.app"
-  # 勿设置 NEXT_PUBLIC_API_URL 为 Railway 绝对地址，否则浏览器跨域，仍会出现 CORS/502 组合问题
-
-# 不要使用 /api/* 的 Netlify 边缘代理（易超时 502）；API 由 Next.js rewrites 在构建时转发。
-# 不要使用 /* → /index.html（会破坏 Next.js 路由）。
-
-[dev]
-  command = "npm run dev"
-  targetPort = 3000
-  publish = ".next"
-
-# 缓存配置
-[[headers]]
-  for = "/_next/static/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "*.js"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000"
-
-[[headers]]
-  for = "*.css"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000"
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# API proxy to Railway
+[[redirects]]
+  from = "/api/*"
+  to = "https://ai-native-ip-production.up.railway.app/api/:splat"
+  status = 200
+  force = true
+
+# SPA fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[dev]
+  command = "npm run dev"
+  targetPort = 3000
+  publish = ".next"
+
+# Cache headers
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
+[[headers]]
+  for = "*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
