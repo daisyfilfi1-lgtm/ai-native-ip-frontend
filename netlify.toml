@@ -3,8 +3,7 @@
   publish = ".next"
 
 [build.environment]
-  NETLIFY_NEXT_PLUGIN_SKIP = "false"
-  NODE_VERSION = "20"
+  NODE_VERSION = "18"
 
 # API 代理到后端 - 必须在 SPA 回退之前
 [[redirects]]
