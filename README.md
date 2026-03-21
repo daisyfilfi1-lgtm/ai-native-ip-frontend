@@ -100,7 +100,7 @@ frontend/
 ## 🔌 API 集成（与 CORS / 502）
 
 - **浏览器**只请求同源路径：`/api/v1/...`（见 `lib/apiBaseUrl.ts`）。
-- **Next.js `rewrites`**（`next.config.js`）在**服务端**把 `/api/*` 转发到 `RAILWAY_API_ORIGIN`（默认 Railway），因此**不需要**后端对 Netlify 配 CORS，也不会触发 Netlify 边缘对 `/api` 的代理超时。
+- **`app/api/v1/[[...path]]/route.ts`** 在服务端用 `fetch` 转发到 Railway（`RAILWAY_API_ORIGIN`，默认生产域名），并设置 `maxDuration`；不再依赖 `next.config` 的 rewrites（在 Netlify 上曾出现 502）。
 - **勿**在 Netlify 环境变量里设置 `NEXT_PUBLIC_API_URL` 为 Railway 地址；若已误设，代码会在 **`*.netlify.app` / `*.vercel.app` 上强制使用同源 `/api/v1`**（见 `lib/apiBaseUrl.ts`），但仍需重新部署后生效。
 
 ## 🛠️ 技术栈
