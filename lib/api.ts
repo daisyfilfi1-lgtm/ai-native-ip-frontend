@@ -23,7 +23,8 @@ import type {
   AudioTopicsResult,
 } from '@/types';
 
-const API_BASE_URL = '/api/v1';
+/** 构建时注入；直连 Railway 时需与后端 CORS 一致（默认 * + 无 credentials） */
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api/v1';
 
 class ApiClient {
   private client: AxiosInstance;
