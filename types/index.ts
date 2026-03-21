@@ -228,7 +228,11 @@ export interface FeishuSpaceItem {
 
 export interface FeishuSyncResult {
   synced: number;
+  skipped?: number;
+  deleted?: number;
   failed: number;
+  total_remote?: number;
+  total_local?: number;
   errors: string[];
   used_space_id?: string | null;
 }

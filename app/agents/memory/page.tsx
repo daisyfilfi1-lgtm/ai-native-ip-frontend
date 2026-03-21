@@ -837,13 +837,24 @@ export default function MemoryAgentPage() {
                 </div>
 
                 {feishuSyncResult && (
-                  <div className="p-3 rounded-lg bg-background-tertiary text-sm">
-                    <p className="text-foreground">同步结果：成功 {feishuSyncResult.synced} 篇，失败 {feishuSyncResult.failed} 篇</p>
+                  <div className="p-3 rounded-lg bg-background-tertiary text-sm space-y-1">
+                    <p className="text-foreground">
+                      同步结果：成功 {feishuSyncResult.synced} 条，跳过 {feishuSyncResult.skipped ?? 0} 条
+                      {feishuSyncResult.failed > 0 && `，失败 ${feishuSyncResult.failed} 条`}
+                    </p>
+                    {(feishuSyncResult.total_remote !== undefined && feishuSyncResult.total_remote === 0) && (
+                      <p className="text-xs text-amber-600">
+                        该知识空间暂无 doc/docx 文档，请确认：① 选择的空间是否正确 ② 应用已加入该知识库成员
+                      </p>
+                    )}
+                    {feishuSyncResult.synced === 0 && (feishuSyncResult.skipped ?? 0) > 0 && (
+                      <p className="text-xs text-foreground-tertiary">全部已是最新，共跳过 {(feishuSyncResult.skipped ?? 0)} 条</p>
+                    )}
                     {feishuSyncResult.used_space_id && (
-                      <p className="text-xs text-foreground-tertiary mt-1">实际使用空间：{feishuSyncResult.used_space_id}</p>
+                      <p className="text-xs text-foreground-tertiary">实际使用空间：{feishuSyncResult.used_space_id}</p>
                     )}
                     {feishuSyncResult.errors.length > 0 && (
-                      <ul className="mt-1 text-foreground-tertiary text-xs list-disc list-inside">
+                      <ul className="mt-1 text-amber-600 text-xs list-disc list-inside">
                         {feishuSyncResult.errors.slice(0, 5).map((err, i) => (
                           <li key={i}>{err}</li>
                         ))}
