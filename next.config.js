@@ -1,3 +1,7 @@
+/** 服务端转发目标（浏览器永远走同源 /api，不写进 NEXT_PUBLIC，避免跨域） */
+const RAILWAY_API_ORIGIN =
+  process.env.RAILWAY_API_ORIGIN || 'https://ai-native-ip-production.up.railway.app'
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // 禁用SWC，使用Babel编译（解决Node.js 25兼容性问题）
@@ -17,12 +21,12 @@ const nextConfig = {
     // unoptimized: true,
   },
   
-  // API 代理配置（开发环境和 Netlify 都适用）
+  // 浏览器请求 /api/* → 由 Node 转发到 Railway（同源、无 CORS；勿在 Netlify 再配 /api 边缘代理）
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        destination: 'https://ai-native-ip-production.up.railway.app/api/:path*',
+        destination: `${RAILWAY_API_ORIGIN}/api/:path*`,
       },
     ];
   },

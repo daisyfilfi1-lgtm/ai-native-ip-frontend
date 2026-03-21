@@ -38,7 +38,7 @@ npm run dev
 
 1. 推送代码到 GitHub
 2. 在 [Netlify](https://app.netlify.com/) 导入项目
-3. 构建设置已包含在 `netlify.toml` 中（已设置 `NEXT_PUBLIC_API_URL` 直连 Railway，减少 `/api` 代理 502）
+3. 构建设置见 `netlify.toml`：**不要**在 Netlify 环境变量里把 `NEXT_PUBLIC_API_URL` 设为 Railway 绝对地址；默认走同源 `/api/v1`，由 `next.config.js` 在服务端转发到后端（无浏览器跨域、无边缘代理 502）
 4. 点击部署
 
 #### 方法二：CLI 部署
@@ -97,13 +97,11 @@ frontend/
 └── netlify.toml           # Netlify配置
 ```
 
-## 🔌 API 集成
+## 🔌 API 集成（与 CORS / 502）
 
-API 代理配置在 `next.config.js` 和 `netlify.toml` 中：
-
-```
-/api/* → https://ai-native-ip-production.up.railway.app/api/*
-```
+- **浏览器**只请求同源路径：`/api/v1/...`（见 `lib/apiBaseUrl.ts`）。
+- **Next.js `rewrites`**（`next.config.js`）在**服务端**把 `/api/*` 转发到 `RAILWAY_API_ORIGIN`（默认 Railway），因此**不需要**后端对 Netlify 配 CORS，也不会触发 Netlify 边缘对 `/api` 的代理超时。
+- **勿**设置 `NEXT_PUBLIC_API_URL=https://xxx.up.railway.app/...`，否则 axios 跨域直连，易出现「无 CORS 头 + 502」叠加报错。
 
 ## 🛠️ 技术栈
 
@@ -130,9 +128,9 @@ API 代理配置在 `next.config.js` 和 `netlify.toml` 中：
 
 ## 🔧 环境变量
 
-```env
-NEXT_PUBLIC_API_URL=/api/v1
-```
+- 生产：**一般无需** `NEXT_PUBLIC_API_URL`。
+- 本地连本机后端：`.env.local` 中 `NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api/v1`。
+- 覆盖转发目标：`RAILWAY_API_ORIGIN`（与 `next.config.js` 一致）。
 
 ## 📄 许可证
 

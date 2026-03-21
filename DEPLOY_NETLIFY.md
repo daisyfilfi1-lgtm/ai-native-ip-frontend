@@ -78,38 +78,28 @@ npm run build
 
 ## ⚙️ 配置说明
 
-### netlify.toml 详解
+### netlify.toml 与 API（重要）
 
-```toml
-[build]
-  command = "npm run build"    # 构建命令
-  publish = ".next"            # 发布目录（Next.js 默认）
-
-# API 代理配置 - 解决跨域问题
-[[redirects]]
-  from = "/api/*"
-  to = "https://ai-native-ip-production.up.railway.app/api/:splat"
-  status = 200                 # 使用 200 进行重写（rewrite）
-  force = true
-```
+- **不要**在 `netlify.toml` 里配置 `[[redirects]] from="/api/*"` 做边缘代理（易超时 → **502 Application failed to respond**）。
+- **不要**使用 `/* → /index.html` 作为 SPA 回退（会破坏 Next.js App Router）。
+- API 流量走 **`next.config.js` 的 `rewrites`**：由 **Next 运行时**把 `/api/*` 转发到 `RAILWAY_API_ORIGIN`（默认 Railway），**浏览器始终请求同源** `/api/v1/...`，因此：
+  - **无**浏览器跨域，**不依赖**后端 CORS；
+  - 轮询 `getIngestStatus`、上传等不再经 Netlify 边缘代理。
 
 ### 环境变量配置
 
-**推荐**：使用 **完整 Railway 地址**（与 `netlify.toml` 中 `build.environment` 一致），让浏览器直连 API，避免 Netlify 反向代理超时出现 **502 / Application failed to respond**（常见于 `getIngestStatus` 轮询）。
+在 Netlify → Site settings → Environment variables：
 
-在 Netlify Dashboard → Site settings → Environment variables 中：
+1. **删除**（若存在）`NEXT_PUBLIC_API_URL` 指向 Railway 的绝对地址——否则会强制 axios 跨域直连，重新出现 **CORS + 502** 组合问题。
+2. **可选**：`RAILWAY_API_ORIGIN=https://你的服务.up.railway.app`（与 `next.config.js` 一致，覆盖默认）。
 
+本地开发连本机后端：在项目根 `.env.local` 中：
+
+```env
+NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api/v1
 ```
-NEXT_PUBLIC_API_URL = https://ai-native-ip-production.up.railway.app/api/v1
-```
 
-若曾误设为 `NEXT_PUBLIC_API_URL=/api/v1`（走本站代理），请**删除或改成上面完整 URL**，并重新触发部署。
-
-CLI：
-
-```bash
-netlify env:set NEXT_PUBLIC_API_URL https://ai-native-ip-production.up.railway.app/api/v1
-```
+（仅开发时使用；生产不要设置 `NEXT_PUBLIC_API_URL` 为 Railway URL。）
 
 ---
 

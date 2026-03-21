@@ -252,7 +252,12 @@ const mockAgentStatus: AgentConfigStatus = {
 };
 
 // ===== API实现 =====
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ai-native-ip-production.up.railway.app';
+// 与 lib/apiBaseUrl 一致：默认同源相对路径，避免跨域
+const BASE_URL = (() => {
+  const u = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (u && /^https?:\/\//i.test(u)) return u.replace(/\/$/, '');
+  return '';
+})();
 const USE_MOCK = true; // 设置为false时连接真实后端
 
 async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {

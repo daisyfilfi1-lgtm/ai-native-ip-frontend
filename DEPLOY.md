@@ -35,11 +35,7 @@ vercel
 vercel --prod
 ```
 
-5. **配置环境变量**
-在 Vercel Dashboard 中添加：
-```
-NEXT_PUBLIC_API_URL=https://ai-native-ip-production.up.railway.app/api/v1
-```
+5. **环境变量**：生产环境**不要**把 `NEXT_PUBLIC_API_URL` 设为 Railway 绝对地址；使用同源 `/api/v1` + `next.config.js` rewrites（见 README）。本地调试可设 `NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api/v1`。
 
 #### 或使用 Git 集成：
 
@@ -128,7 +124,8 @@ netlify deploy --prod --dir=dist
 
 | 变量名 | 说明 | 示例 |
 |--------|------|------|
-| `NEXT_PUBLIC_API_URL` | 后端API地址 | `https://ai-native-ip-production.up.railway.app/api/v1` |
+| `NEXT_PUBLIC_API_URL` | 可选。仅本地直连后端时设为 `http://127.0.0.1:8000/api/v1`；**生产勿设为 Railway** |
+| `RAILWAY_API_ORIGIN` | 可选。Next rewrites 转发目标，默认 `https://ai-native-ip-production.up.railway.app` |
 
 ### next.config.js 配置
 
