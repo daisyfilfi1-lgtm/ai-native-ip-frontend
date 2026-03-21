@@ -4,8 +4,11 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  # 浏览器直连 Railway API，避免经 Netlify /api 边缘代理时出现 502（与 README/.env.example 一致）
+  NEXT_PUBLIC_API_URL = "https://ai-native-ip-production.up.railway.app/api/v1"
 
-# API 代理到后端 - 必须在 SPA 回退之前
+# API 代理到后端（未设置 NEXT_PUBLIC_API_URL 时仍可用；生产构建已默认直连 Railway）
+# 必须在 SPA 回退之前
 [[redirects]]
   from = "/api/*"
   to = "https://ai-native-ip-production.up.railway.app/api/:splat"

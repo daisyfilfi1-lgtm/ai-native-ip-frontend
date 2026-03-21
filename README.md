@@ -38,7 +38,7 @@ npm run dev
 
 1. 推送代码到 GitHub
 2. 在 [Netlify](https://app.netlify.com/) 导入项目
-3. 构建设置已包含在 `netlify.toml` 中
+3. 构建设置已包含在 `netlify.toml` 中（已设置 `NEXT_PUBLIC_API_URL` 直连 Railway，减少 `/api` 代理 502）
 4. 点击部署
 
 #### 方法二：CLI 部署
