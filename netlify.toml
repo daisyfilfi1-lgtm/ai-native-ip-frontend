@@ -4,17 +4,15 @@
 
 [build.environment]
   NODE_VERSION = "18"
-  NEXT_PUBLIC_API_URL = "https://ai-native-ip-production.up.railway.app"
 
-# API 代理到后端
-# 精确匹配 API 路由
+# API 代理到后端（所有请求都走 Netlify 代理，解决 CORS 问题）
 [[redirects]]
   from = "/api/*"
   to = "https://ai-native-ip-production.up.railway.app/api/:splat"
   status = 200
   force = true
 
-# 处理其他所有路由（SPA回退）
+# SPA 回退
 [[redirects]]
   from = "/*"
   to = "/index.html"
