@@ -95,15 +95,20 @@ npm run build
 
 ### 环境变量配置
 
-在 Netlify Dashboard → Site settings → Environment variables 中添加：
+**推荐**：使用 **完整 Railway 地址**（与 `netlify.toml` 中 `build.environment` 一致），让浏览器直连 API，避免 Netlify 反向代理超时出现 **502 / Application failed to respond**（常见于 `getIngestStatus` 轮询）。
+
+在 Netlify Dashboard → Site settings → Environment variables 中：
 
 ```
-NEXT_PUBLIC_API_URL = /api/v1
+NEXT_PUBLIC_API_URL = https://ai-native-ip-production.up.railway.app/api/v1
 ```
 
-或者使用 CLI：
+若曾误设为 `NEXT_PUBLIC_API_URL=/api/v1`（走本站代理），请**删除或改成上面完整 URL**，并重新触发部署。
+
+CLI：
+
 ```bash
-netlify env:set NEXT_PUBLIC_API_URL /api/v1
+netlify env:set NEXT_PUBLIC_API_URL https://ai-native-ip-production.up.railway.app/api/v1
 ```
 
 ---
