@@ -80,6 +80,14 @@ export interface IngestResponse {
   status: string;
 }
 
+/** POST /memory/upload */
+export interface MemoryUploadResponse {
+  file_id: string;
+  file_url: string;
+  size_bytes: number;
+  content_type?: string | null;
+}
+
 export interface IngestStatus {
   ingest_task_id: string;
   status: 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED';

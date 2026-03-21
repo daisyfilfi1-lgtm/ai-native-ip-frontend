@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import type { 
   IP, CreateIPRequest, 
-  IngestRequest, IngestResponse, IngestStatus,
+  IngestRequest, IngestResponse, IngestStatus, MemoryUploadResponse,
   AssetsListResponse,
   RetrieveRequest, RetrieveResult,
   MemoryFullConfig,
@@ -65,6 +65,27 @@ class ApiClient {
   // Memory APIs
   async ingestMemory(data: IngestRequest): Promise<IngestResponse> {
     const response = await this.client.post<IngestResponse>('/memory/ingest', data);
+    return response.data;
+  }
+
+  /** 上传素材文件，返回 file_id 供 ingest 传入 local_file_id */
+  async uploadMemoryFile(ipId: string, file: File): Promise<MemoryUploadResponse> {
+    const formData = new FormData();
+    formData.append('ip_id', ipId);
+    formData.append('file', file);
+    const response = await this.client.post<MemoryUploadResponse>('/memory/upload', formData, {
+      timeout: 120000,
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+      transformRequest: [
+        (data, headers) => {
+          if (data instanceof FormData) {
+            delete headers['Content-Type'];
+          }
+          return data;
+        },
+      ],
+    });
     return response.data;
   }
 

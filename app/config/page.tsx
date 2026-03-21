@@ -27,7 +27,9 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
-import type { ConfigHistoryItem, IP } from '@/types';
+import type { ConfigHistoryItem } from '@/types';
+import { IpSelect } from '@/components/ip/IpSelect';
+import { useIpList } from '@/hooks/useIpList';
 
 // 除记忆外其余 Agent 为静态占位
 const otherAgentConfigs = [
@@ -44,7 +46,7 @@ export default function ConfigPage() {
 
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [ipList, setIpList] = useState<IP[]>([]);
+  const { ips: ipList, loading: ipListLoading } = useIpList();
   const [configIp, setConfigIp] = useState(urlIp);
   const [memoryConfigStatus, setMemoryConfigStatus] = useState<'configured' | 'configuring' | 'pending'>( 'pending');
   const [memoryProgress, setMemoryProgress] = useState(0);
@@ -53,10 +55,6 @@ export default function ConfigPage() {
   const [configHistory, setConfigHistory] = useState<ConfigHistoryItem[]>([]);
 
   useEffect(() => { setConfigIp(prev => prev || urlIp); }, [urlIp]);
-
-  useEffect(() => {
-    api.listIPs().then(setIpList).catch(() => setIpList([]));
-  }, []);
 
   useEffect(() => {
     if (!configIp.trim()) {
@@ -153,15 +151,13 @@ export default function ConfigPage() {
               description="各Agent的配置完整度和状态（记忆Agent按所选 IP 从接口拉取）"
             />
             <div className="mb-4">
-              <Select
+              <IpSelect
                 label="选择 IP"
                 value={configIp}
-                onChange={(e) => setConfigIp(e.target.value)}
-                options={[
-                  { value: '', label: statusLoading ? '加载中...' : '请选择 IP' },
-                  ...ipList.map((ip) => ({ value: ip.ip_id, label: `${ip.name} (${ip.ip_id})` })),
-                  ...(configIp && !ipList.some((ip) => ip.ip_id === configIp) ? [{ value: configIp, label: configIp }] : []),
-                ]}
+                onChange={setConfigIp}
+                ips={ipList}
+                loading={ipListLoading}
+                helper="记忆 Agent 状态按所选 IP 从接口拉取；URL 参数 ip= 会预填"
               />
             </div>
             <div className="space-y-4">

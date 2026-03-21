@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { IpSelect } from '@/components/ip/IpSelect';
+import { useIpList } from '@/hooks/useIpList';
 import { api } from '@/lib/api';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -30,7 +32,7 @@ import {
   BookOpen,
   AlertCircle
 } from 'lucide-react';
-import type { FeishuSpaceItem, FeishuSyncResult, IP, MemoryFullConfig, PendingLabelsItem, RetrievalConfig, RetrieveResult, UsageLimitsConfig, TagCategory } from '@/types';
+import type { FeishuSpaceItem, FeishuSyncResult, MemoryFullConfig, PendingLabelsItem, RetrievalConfig, RetrieveResult, UsageLimitsConfig, TagCategory } from '@/types';
 import { IngestRequest, RetrieveRequest } from '@/types';
 import { isAxiosError } from 'axios';
 
@@ -73,6 +75,7 @@ const defaultUsageLimits: UsageLimitsConfig = {
 export default function MemoryAgentPage() {
   const searchParams = useSearchParams();
   const urlIp = searchParams.get('ip') || '';
+  const { ips: ipList, loading: ipListLoading } = useIpList();
 
   const [activeTab, setActiveTab] = useState('ingest');
   const [isIngesting, setIsIngesting] = useState(false);
@@ -81,6 +84,8 @@ export default function MemoryAgentPage() {
   const [assetsPreview, setAssetsPreview] = useState<{ items: { asset_id: string; title?: string; content_snippet?: string }[]; total: number } | null>(null);
   const [ingestError, setIngestError] = useState<string | null>(null);
   const [ingestIpId, setIngestIpId] = useState('');
+  const [ingestFile, setIngestFile] = useState<File | null>(null);
+  const ingestFileInputRef = useRef<HTMLInputElement>(null);
   const [ingestSourceType, setIngestSourceType] = useState<'video' | 'audio' | 'text' | 'document'>('text');
   const [ingestSourceUrl, setIngestSourceUrl] = useState('');
   const [ingestTitle, setIngestTitle] = useState('');
@@ -99,8 +104,6 @@ export default function MemoryAgentPage() {
   const [feishuSpaces, setFeishuSpaces] = useState<FeishuSpaceItem[]>([]);
   const [feishuSpacesLoading, setFeishuSpacesLoading] = useState(false);
   const [feishuSpacesError, setFeishuSpacesError] = useState<string | null>(null);
-  const [feishuIpList, setFeishuIpList] = useState<IP[]>([]);
-  const [feishuIpListLoading, setFeishuIpListLoading] = useState(false);
   const [feishuSpaceId, setFeishuSpaceId] = useState('');
   const [feishuIpId, setFeishuIpId] = useState('');
   const [feishuRememberBinding, setFeishuRememberBinding] = useState(true);
@@ -134,21 +137,68 @@ export default function MemoryAgentPage() {
     setFeishuIpId((prev) => prev || urlIp);
   }, [urlIp]);
 
+  const ingestFileAccept = useMemo(() => {
+    switch (ingestSourceType) {
+      case 'video':
+        return 'video/*';
+      case 'audio':
+        return 'audio/*';
+      case 'text':
+        return 'text/plain,text/markdown,.txt,.md,.markdown';
+      case 'document':
+      default:
+        return [
+          '.pdf',
+          '.doc',
+          '.docx',
+          '.txt',
+          '.md',
+          '.markdown',
+          '.csv',
+          '.xlsx',
+          '.xls',
+          '.ppt',
+          '.pptx',
+          '.rtf',
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          'text/plain',
+          'text/csv',
+        ].join(',');
+    }
+  }, [ingestSourceType]);
+
   const handleIngest = async () => {
     const ip_id = ingestIpId.trim();
-    if (!ip_id) { setIngestError('请填写目标 IP ID'); return; }
-    if ((ingestSourceType === 'text' || ingestSourceType === 'document') && !ingestSourceUrl.trim()) {
-      setIngestError('文本/文档类型需填写 URL 链接'); return;
+    if (!ip_id) {
+      setIngestError('请选择目标 IP');
+      return;
+    }
+    const url = ingestSourceUrl.trim();
+    const hasFile = ingestFile !== null;
+    if (!url && !hasFile) {
+      setIngestError('请填写素材 URL，或上传本地文件');
+      return;
     }
     setIngestError(null);
     setIsIngesting(true);
     setIngestTaskId(null);
     setIngestStatus('QUEUED');
     try {
+      let local_file_id: string | undefined;
+      if (hasFile && ingestFile) {
+        setIngestStatus('上传文件中…');
+        const up = await api.uploadMemoryFile(ip_id, ingestFile);
+        local_file_id = up.file_id;
+      }
       const res = await api.ingestMemory({
         ip_id,
         source_type: ingestSourceType,
-        source_url: ingestSourceUrl.trim() || undefined,
+        source_url: hasFile ? undefined : url || undefined,
+        local_file_id,
         title: ingestTitle.trim() || undefined,
         notes: ingestNotes.trim() || undefined,
       });
@@ -160,7 +210,11 @@ export default function MemoryAgentPage() {
         if (st.status === 'COMPLETED' || st.status === 'FAILED') {
           setIsIngesting(false);
           if (st.status === 'FAILED') setIngestError(st.error || '任务失败');
-          else if (st.status === 'COMPLETED') api.getAssets(ip_id, 5).then(setAssetsPreview).catch(() => {});
+          else if (st.status === 'COMPLETED') {
+            setIngestFile(null);
+            if (ingestFileInputRef.current) ingestFileInputRef.current.value = '';
+            api.getAssets(ip_id, 5).then(setAssetsPreview).catch(() => {});
+          }
           return;
         }
         setTimeout(poll, 1500);
@@ -255,16 +309,6 @@ export default function MemoryAgentPage() {
     if (activeTab !== 'feishu') return;
     (async () => {
       setFeishuSpacesError(null);
-      setFeishuIpListLoading(true);
-      try {
-        const ips = await api.listIPs();
-        setFeishuIpList(ips);
-      } catch (e) {
-        setFeishuIpList([]);
-        setFeishuSpacesError((prev) => prev || `加载 IP 列表失败：${apiErrorDetail(e)}`);
-      } finally {
-        setFeishuIpListLoading(false);
-      }
 
       try {
         const config = await api.getFeishuConfig();
@@ -458,16 +502,23 @@ export default function MemoryAgentPage() {
                 description="将IP过往内容转化为可检索的数字资产"
               />
               <div className="space-y-4">
-                <Input
-                  label="目标 IP ID"
-                  placeholder="例如：zhangkai_001（可从 IP 管理跳转带出）"
+                <IpSelect
+                  label="目标 IP"
                   value={ingestIpId}
-                  onChange={(e) => setIngestIpId(e.target.value)}
+                  onChange={setIngestIpId}
+                  ips={ipList}
+                  loading={ipListLoading}
+                  helper="从列表选择；带 ip= 参数进入本页时会自动选中"
                 />
                 <Select
                   label="素材类型"
                   value={ingestSourceType}
-                  onChange={(e) => setIngestSourceType(e.target.value as 'video' | 'audio' | 'text' | 'document')}
+                  onChange={(e) => {
+                    const v = e.target.value as 'video' | 'audio' | 'text' | 'document';
+                    setIngestSourceType(v);
+                    setIngestFile(null);
+                    if (ingestFileInputRef.current) ingestFileInputRef.current.value = '';
+                  }}
                   options={[
                     { value: 'video', label: '视频' },
                     { value: 'audio', label: '音频' },
@@ -475,14 +526,73 @@ export default function MemoryAgentPage() {
                     { value: 'document', label: '文档' },
                   ]}
                 />
-                {(ingestSourceType === 'text' || ingestSourceType === 'document') && (
-                  <Input
-                    label="URL 链接"
-                    placeholder="文本/文档的 URL，必填"
-                    value={ingestSourceUrl}
-                    onChange={(e) => setIngestSourceUrl(e.target.value)}
+                <Input
+                  label="素材 URL（可选）"
+                  placeholder="与「本地上传」二选一：可填公网可访问的链接"
+                  value={ingestSourceUrl}
+                  onChange={(e) => {
+                    setIngestSourceUrl(e.target.value);
+                    if (e.target.value.trim()) {
+                      setIngestFile(null);
+                      if (ingestFileInputRef.current) ingestFileInputRef.current.value = '';
+                    }
+                  }}
+                />
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-foreground">本地上传（可选）</label>
+                  <input
+                    ref={ingestFileInputRef}
+                    type="file"
+                    className="hidden"
+                    accept={ingestFileAccept}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) {
+                        setIngestFile(f);
+                        setIngestSourceUrl('');
+                      }
+                    }}
                   />
-                )}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => ingestFileInputRef.current?.click()}
+                      leftIcon={<Upload className="w-4 h-4" />}
+                    >
+                      选择文件
+                    </Button>
+                    {ingestFile && (
+                      <>
+                        <span className="text-sm text-foreground-secondary truncate max-w-[200px]" title={ingestFile.name}>
+                          {ingestFile.name}
+                        </span>
+                        <span className="text-xs text-foreground-tertiary">
+                          ({(ingestFile.size / 1024).toFixed(1)} KB)
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setIngestFile(null);
+                            if (ingestFileInputRef.current) ingestFileInputRef.current.value = '';
+                          }}
+                        >
+                          清除
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  <p className="text-xs text-foreground-tertiary leading-relaxed">
+                    {ingestSourceType === 'video' && '视频：上传后走语音转写（需配置 Whisper 等）。'}
+                    {ingestSourceType === 'audio' && '音频：上传后走语音转写。'}
+                    {ingestSourceType === 'text' && '文本：支持 TXT/MD 等；与 URL 二选一。'}
+                    {ingestSourceType === 'document' &&
+                      '文档：支持 PDF、Office、TXT、Markdown 等；当前后端对二进制格式按 UTF-8 解析，复杂版式 PDF 建议后续接专用解析服务。'}
+                  </p>
+                </div>
 
                 <Input
                   label="素材标题"
@@ -547,7 +657,7 @@ export default function MemoryAgentPage() {
                     </>
                   )
                 ) : (
-                  <p className="text-sm text-foreground-tertiary">填写目标 IP ID 后点击刷新，或完成录入后自动加载</p>
+                  <p className="text-sm text-foreground-tertiary">选择 IP 后点击刷新，或完成录入后自动加载</p>
                 )}
               </div>
             </Card>
@@ -562,11 +672,13 @@ export default function MemoryAgentPage() {
               description="使用自然语言搜索IP素材库（后端占位时返回空，对接后按相似度返回）"
             />
             <div className="space-y-6">
-              <Input
-                label="目标 IP ID"
-                placeholder="与 URL 参数 ip= 一致"
+              <IpSelect
+                label="目标 IP"
                 value={retrieveIpId}
-                onChange={(e) => setRetrieveIpId(e.target.value)}
+                onChange={setRetrieveIpId}
+                ips={ipList}
+                loading={ipListLoading}
+                helper="与 URL 参数 ip= 一致；未在列表中的 id 也会显示"
               />
               <div className="flex gap-3">
                 <div className="flex-1">
@@ -631,11 +743,13 @@ export default function MemoryAgentPage() {
                 title="待复核列表" 
                 description="自动打标待确认的素材，确认后写入正式标签"
               />
-              <Input
-                label="IP ID"
-                placeholder="与 URL 参数 ip= 一致，用于拉取待复核列表"
+              <IpSelect
+                label="目标 IP"
                 value={tagsIpId}
-                onChange={(e) => setTagsIpId(e.target.value)}
+                onChange={setTagsIpId}
+                ips={ipList}
+                loading={ipListLoading}
+                helper="用于拉取该 IP 的待复核列表"
                 className="mb-4"
               />
               {pendingLoading && <p className="text-sm text-foreground-tertiary">加载中...</p>}
@@ -799,31 +913,15 @@ export default function MemoryAgentPage() {
                   )}
                 </div>
 
-                {feishuIpList.length > 0 ? (
-                  <Select
-                    label="目标 IP"
-                    value={feishuIpId}
-                    onChange={(e) => setFeishuIpId(e.target.value)}
-                    options={[
-                      {
-                        value: '',
-                        label: feishuIpListLoading ? '加载 IP 列表...' : '请选择要写入素材库的 IP',
-                      },
-                      ...feishuIpList.map((ip) => ({
-                        value: ip.ip_id,
-                        label: `${ip.name} (${ip.ip_id})`,
-                      })),
-                    ]}
-                  />
-                ) : (
-                  <Input
-                    label="目标 IP ID"
-                    placeholder="例如：xiaomin1（请先在「IP 管理」创建，或等待列表加载）"
-                    helper="同步的文档将写入该 IP 的 Memory（ip_assets）；须与后端已存在的 ip_id 一致"
-                    value={feishuIpId}
-                    onChange={(e) => setFeishuIpId(e.target.value)}
-                  />
-                )}
+                <IpSelect
+                  label="目标 IP"
+                  value={feishuIpId}
+                  onChange={setFeishuIpId}
+                  ips={ipList}
+                  loading={ipListLoading}
+                  emptyLabel="请选择要写入素材库的 IP"
+                  helper="同步的文档将写入该 IP 的 Memory（ip_assets）；须为已在系统中创建的 IP"
+                />
                 <Switch
                   checked={feishuRememberBinding}
                   onChange={(e) => setFeishuRememberBinding(e.target.checked)}
@@ -889,7 +987,7 @@ export default function MemoryAgentPage() {
               <div className="space-y-3 text-sm text-foreground-secondary">
                 <p>1. 在上方填写飞书开放平台的 App ID、App Secret 并保存</p>
                 <p>2. 选择要同步的知识空间（需应用已加入该知识库成员）</p>
-                <p>3. 填写目标 IP ID（需已在本系统创建），点击开始同步</p>
+                <p>3. 选择目标 IP（需已在本系统创建），点击开始同步</p>
               </div>
             </Card>
 
@@ -933,11 +1031,13 @@ export default function MemoryAgentPage() {
         {/* Config Tab */}
         <TabsContent value="config">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Input
-              label="当前 IP ID"
-              placeholder="与 URL 参数 ip= 一致，用于拉取/保存该 IP 的配置"
+            <IpSelect
+              label="当前 IP"
               value={configIpId}
-              onChange={(e) => setConfigIpId(e.target.value)}
+              onChange={setConfigIpId}
+              ips={ipList}
+              loading={ipListLoading}
+              helper="用于拉取/保存该 IP 的记忆与标签配置"
               className="lg:col-span-2"
             />
             {configLoading && <p className="text-sm text-foreground-tertiary lg:col-span-2">加载中...</p>}
