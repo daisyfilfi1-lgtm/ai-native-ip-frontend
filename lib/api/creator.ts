@@ -2,6 +2,7 @@
 // 对应后台：7-Agent工作流系统
 
 import { TopicCard, GeneratedContent, LibraryItem, AnalyticsMetrics, StyleType } from '@/types/creator';
+import { getApiOriginOrEmpty } from '@/lib/apiBaseUrl';
 
 // ===== Agent配置状态类型 =====
 export interface AgentStatus {
@@ -252,12 +253,6 @@ const mockAgentStatus: AgentConfigStatus = {
 };
 
 // ===== API实现 =====
-// 与 lib/apiBaseUrl 一致：默认同源相对路径，避免跨域
-const BASE_URL = (() => {
-  const u = process.env.NEXT_PUBLIC_API_URL?.trim();
-  if (u && /^https?:\/\//i.test(u)) return u.replace(/\/$/, '');
-  return '';
-})();
 const USE_MOCK = true; // 设置为false时连接真实后端
 
 async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
@@ -265,7 +260,7 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> 
     throw new Error('Mock mode: API not implemented');
   }
   
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
+  const response = await fetch(`${getApiOriginOrEmpty()}${endpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',

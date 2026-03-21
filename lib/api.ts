@@ -25,18 +25,21 @@ import type {
   AudioTopicsResult,
 } from '@/types';
 
-const API_BASE_URL = getBrowserApiBaseUrl();
-
 class ApiClient {
   private client: AxiosInstance;
 
   constructor() {
     this.client = axios.create({
-      baseURL: API_BASE_URL,
+      baseURL: '/api/v1',
       headers: {
         'Content-Type': 'application/json',
       },
       timeout: 30000,
+    });
+
+    this.client.interceptors.request.use((config) => {
+      config.baseURL = getBrowserApiBaseUrl();
+      return config;
     });
 
     this.client.interceptors.response.use(
