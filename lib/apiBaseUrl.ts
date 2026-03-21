@@ -7,13 +7,22 @@
  * - 本地开发：`NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api/v1` 仍生效（非 netlify/vercel 域名）。
  */
 export function getBrowserApiBaseUrl(): string {
+  const u = process.env.NEXT_PUBLIC_API_URL?.trim();
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
     if (host.endsWith('.netlify.app') || host.endsWith('.vercel.app')) {
       return '/api/v1';
     }
+    // 自定义域名托管在 Netlify 时：若误配了指向 Railway 的 NEXT_PUBLIC_*，仍强制同源
+    if (
+      u &&
+      /\.railway\.app/i.test(u) &&
+      host !== 'localhost' &&
+      host !== '127.0.0.1'
+    ) {
+      return '/api/v1';
+    }
   }
-  const u = process.env.NEXT_PUBLIC_API_URL?.trim();
   if (u && /^https?:\/\//i.test(u)) {
     return u.replace(/\/$/, '');
   }
