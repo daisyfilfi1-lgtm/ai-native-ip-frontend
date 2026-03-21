@@ -16,13 +16,15 @@ interface UploadPanelProps {
 export function UploadPanel({ ipId, onUploadComplete }: UploadPanelProps) {
   const [uploading, setUploading] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
-  const [uploaded, setUploaded] = useState<string[]>([]);
+  /** 已成功上传的文件名（与 files 对应展示勾选） */
+  const [uploadedNames, setUploadedNames] = useState<string[]>([]);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setFiles(Array.from(e.target.files));
+      setUploadedNames([]);
       setError('');
     }
   };
@@ -32,35 +34,22 @@ export function UploadPanel({ ipId, onUploadComplete }: UploadPanelProps) {
     
     setUploading(true);
     setError('');
-    const uploadedIds: string[] = [];
-    
+    const names: string[] = [];
+
     for (const file of files) {
       try {
-        const formData = new FormData();
-        formData.append('ip_id', ipId);
-        formData.append('file', file);
-        
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/memory/upload`, {
-          method: 'POST',
-          body: formData,
-        });
-        
-        if (!response.ok) {
-          throw new Error(`上传失败: ${file.name}`);
-        }
-        
-        const data = await response.json();
-        uploadedIds.push(data.file_id);
+        await api.uploadMemoryFile(ipId, file);
+        names.push(file.name);
       } catch (e) {
         setError(`上传失败: ${file.name}`);
         console.error(e);
       }
     }
-    
-    setUploaded(uploadedIds);
+
+    setUploadedNames(names);
     setUploading(false);
     
-    if (uploadedIds.length > 0 && onUploadComplete) {
+    if (names.length > 0 && onUploadComplete) {
       onUploadComplete();
     }
   };
@@ -110,7 +99,7 @@ export function UploadPanel({ ipId, onUploadComplete }: UploadPanelProps) {
                   {(file.size / 1024).toFixed(1)} KB
                 </Badge>
               </div>
-              {uploaded.includes(file.name) ? (
+              {uploadedNames.includes(file.name) ? (
                 <Check className="w-4 h-4 text-green-500" />
               ) : (
                 <button onClick={() => handleRemove(index)} className="text-gray-400 hover:text-red-500">
@@ -133,7 +122,7 @@ export function UploadPanel({ ipId, onUploadComplete }: UploadPanelProps) {
       {files.length > 0 && (
         <Button 
           onClick={handleUpload}
-          disabled={uploading || uploaded.length === files.length}
+          disabled={uploading || uploadedNames.length === files.length}
           className="w-full mt-4"
         >
           {uploading ? (
@@ -151,7 +140,7 @@ export function UploadPanel({ ipId, onUploadComplete }: UploadPanelProps) {
       )}
       
       {/* 上传成功 */}
-      {uploaded.length > 0 && uploaded.length === files.length && (
+      {uploadedNames.length > 0 && uploadedNames.length === files.length && (
         <div className="mt-3 p-2 bg-green-50 text-green-600 text-sm rounded flex items-center gap-2">
           <Check className="w-4 h-4" />
           上传成功！

@@ -89,25 +89,45 @@ class ApiClient {
     throw new Error('ingestMemory failed');
   }
 
-  /** 上传素材文件，返回 file_id 供 ingest 传入 local_file_id */
+  /** 上传素材文件，返回 file_id 供 ingest 传入 local_file_id。对网关 502/503/504 与网络错误重试，与轮询 ingest 一致。 */
   async uploadMemoryFile(ipId: string, file: File): Promise<MemoryUploadResponse> {
-    const formData = new FormData();
-    formData.append('ip_id', ipId);
-    formData.append('file', file);
-    const response = await this.client.post<MemoryUploadResponse>('/memory/upload', formData, {
-      timeout: 120000,
-      maxContentLength: Infinity,
-      maxBodyLength: Infinity,
-      transformRequest: [
-        (data, headers) => {
-          if (data instanceof FormData) {
-            delete headers['Content-Type'];
-          }
-          return data;
-        },
-      ],
-    });
-    return response.data;
+    const maxAttempts = 3;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const formData = new FormData();
+        formData.append('ip_id', ipId);
+        formData.append('file', file);
+        const response = await this.client.post<MemoryUploadResponse>('/memory/upload', formData, {
+          timeout: 120000,
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
+          transformRequest: [
+            (data, headers) => {
+              if (data instanceof FormData) {
+                delete headers['Content-Type'];
+              }
+              return data;
+            },
+          ],
+        });
+        return response.data;
+      } catch (err) {
+        const ax = err as AxiosError;
+        const status = ax.response?.status;
+        const retryable =
+          status === 502 ||
+          status === 503 ||
+          status === 504 ||
+          ax.code === 'ECONNABORTED' ||
+          ax.code === 'ERR_NETWORK';
+        if (retryable && attempt < maxAttempts - 1) {
+          await new Promise((r) => setTimeout(r, 600 + attempt * 400));
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw new Error('uploadMemoryFile failed');
   }
 
   /**
