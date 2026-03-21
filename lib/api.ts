@@ -344,3 +344,7 @@ class ApiClient {
     },
   };
 }
+
+// Export singleton instance
+export const api = new ApiClient();
+export default api;
