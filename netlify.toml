@@ -5,25 +5,25 @@
 [build.environment]
   NODE_VERSION = "18"
 
-# API proxy to Railway
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# 边缘层将 /api/* 转发到 Railway，不经 Next.js Serverless（免费版函数约 10s 上限，长轮询/上传会 502「Application failed to respond」）。
+# 若仍偶发 502：在 Netlify 环境变量设置 NEXT_PUBLIC_API_DIRECT_ORIGIN=https://你的服务.up.railway.app，让浏览器直连 Railway（后端 CORS 已放行 *.netlify.app）。
+# 若 Railway 域名变更，请同步修改下方 URL，或在 Netlify 用 Deploy Preview 环境单独配置。
 [[redirects]]
   from = "/api/*"
   to = "https://ai-native-ip-production.up.railway.app/api/:splat"
   status = 200
   force = true
 
-# SPA fallback
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# 勿添加 /* -> /index.html：Next.js App Router 与 SPA fallback 冲突。
 
 [dev]
   command = "npm run dev"
   targetPort = 3000
   publish = ".next"
 
-# Cache headers
 [[headers]]
   for = "/_next/static/*"
   [headers.values]
@@ -37,4 +37,4 @@
 [[headers]]
   for = "*.css"
   [headers.values]
-    Cache-Control = "public, max-age=31536000"
+    Cache-Control = "public, max-age=31536000, immutable"

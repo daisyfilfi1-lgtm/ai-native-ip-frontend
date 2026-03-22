@@ -17,9 +17,15 @@ const nextConfig = {
     // unoptimized: true,
   },
   
-  // /api/v1/* 由 app/api/v1/[[...path]]/route.ts 服务端转发到 Railway（勿再依赖 rewrites，避免 Netlify 上行为不一致）
+  // 本地 next dev：同源 /api/v1 转发到 Railway（或本机 8000）。生产环境 Netlify 用 netlify.toml 边缘代理，不经 Next Serverless，避免 10s 超时 502。
   async rewrites() {
-    return [];
+    const backend = (process.env.RAILWAY_API_ORIGIN || 'http://127.0.0.1:8000').replace(/\/$/, '');
+    return [
+      {
+        source: '/api/v1/:path*',
+        destination: `${backend}/api/v1/:path*`,
+      },
+    ];
   },
   
   // 重定向配置

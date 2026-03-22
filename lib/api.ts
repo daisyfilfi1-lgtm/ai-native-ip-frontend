@@ -45,7 +45,10 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       (error: AxiosError) => {
-        console.error('API Error:', error.response?.data || error.message);
+        const cfg = error.config;
+        if (!cfg?.silentErrorLog) {
+          console.error('API Error:', error.response?.data || error.message);
+        }
         throw error;
       }
     );
@@ -135,13 +138,17 @@ class ApiClient {
   }
 
   /**
-   * 轮询任务状态。对 502/503/504（网关/部署瞬时故障）自动重试，减轻 Netlify→Railway 代理抖动。
+   * 轮询任务状态。对 502/503/504（网关/部署瞬时故障）自动重试。
+   * 状态查询为轻量 GET：较短超时，避免与 Netlify 边缘代理叠加成 30s×N 次控制台风暴。
    */
   async getIngestStatus(taskId: string): Promise<IngestStatus> {
-    const maxAttempts = 8;
+    const maxAttempts = 5;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        const response = await this.client.get<IngestStatus>(`/memory/ingest/${taskId}`);
+        const response = await this.client.get<IngestStatus>(`/memory/ingest/${taskId}`, {
+          timeout: 15000,
+          silentErrorLog: true,
+        });
         return response.data;
       } catch (err) {
         const ax = err as AxiosError;
@@ -153,7 +160,7 @@ class ApiClient {
           ax.code === 'ECONNABORTED' ||
           ax.code === 'ERR_NETWORK';
         if (retryable && attempt < maxAttempts - 1) {
-          await new Promise((r) => setTimeout(r, 600 + attempt * 350));
+          await new Promise((r) => setTimeout(r, 500 + attempt * 400));
           continue;
         }
         throw err;

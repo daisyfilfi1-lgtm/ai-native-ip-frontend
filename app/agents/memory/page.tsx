@@ -86,6 +86,8 @@ export default function MemoryAgentPage() {
   const [ingestIpId, setIngestIpId] = useState('');
   const [ingestFile, setIngestFile] = useState<File | null>(null);
   const ingestFileInputRef = useRef<HTMLInputElement>(null);
+  /** 组件卸载或重新发起录入时置位，避免轮询继续改 state */
+  const ingestPollCancelledRef = useRef(false);
   const [ingestSourceType, setIngestSourceType] = useState<'video' | 'audio' | 'text' | 'document'>('text');
   const [ingestSourceUrl, setIngestSourceUrl] = useState('');
   const [ingestTitle, setIngestTitle] = useState('');
@@ -137,6 +139,12 @@ export default function MemoryAgentPage() {
     setFeishuIpId((prev) => prev || urlIp);
   }, [urlIp]);
 
+  useEffect(() => {
+    return () => {
+      ingestPollCancelledRef.current = true;
+    };
+  }, []);
+
   const ingestFileAccept = useMemo(() => {
     switch (ingestSourceType) {
       case 'video':
@@ -147,6 +155,7 @@ export default function MemoryAgentPage() {
         return 'text/plain,text/markdown,.txt,.md,.markdown';
       case 'document':
       default:
+        // 与后端 ingest 解析一致：仅 txt/md/csv、docx、pdf；勿引导 xlsx/ppt（后端未解析）
         return [
           '.pdf',
           '.doc',
@@ -155,16 +164,9 @@ export default function MemoryAgentPage() {
           '.md',
           '.markdown',
           '.csv',
-          '.xlsx',
-          '.xls',
-          '.ppt',
-          '.pptx',
-          '.rtf',
           'application/pdf',
           'application/msword',
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
           'text/plain',
           'text/csv',
         ].join(',');
@@ -184,6 +186,7 @@ export default function MemoryAgentPage() {
       return;
     }
     setIngestError(null);
+    ingestPollCancelledRef.current = false;
     setIsIngesting(true);
     setIngestTaskId(null);
     setIngestStatus('QUEUED');
@@ -204,22 +207,31 @@ export default function MemoryAgentPage() {
       });
       setIngestTaskId(res.ingest_task_id);
       setIngestStatus(res.status);
+      const taskId = res.ingest_task_id;
       const poll = async () => {
-        const st = await api.getIngestStatus(res.ingest_task_id);
-        setIngestStatus(st.status);
-        if (st.status === 'COMPLETED' || st.status === 'FAILED') {
-          setIsIngesting(false);
-          if (st.status === 'FAILED') setIngestError(st.error || '任务失败');
-          else if (st.status === 'COMPLETED') {
-            setIngestFile(null);
-            if (ingestFileInputRef.current) ingestFileInputRef.current.value = '';
-            api.getAssets(ip_id, 5).then(setAssetsPreview).catch(() => {});
+        if (ingestPollCancelledRef.current) return;
+        try {
+          const st = await api.getIngestStatus(taskId);
+          if (ingestPollCancelledRef.current) return;
+          setIngestStatus(st.status);
+          if (st.status === 'COMPLETED' || st.status === 'FAILED') {
+            setIsIngesting(false);
+            if (st.status === 'FAILED') setIngestError(st.error || '任务失败');
+            else if (st.status === 'COMPLETED') {
+              setIngestFile(null);
+              if (ingestFileInputRef.current) ingestFileInputRef.current.value = '';
+              api.getAssets(ip_id, 5).then(setAssetsPreview).catch(() => {});
+            }
+            return;
           }
-          return;
+          setTimeout(() => void poll(), 2000);
+        } catch (e) {
+          if (ingestPollCancelledRef.current) return;
+          setIngestError(apiErrorDetail(e));
+          setIsIngesting(false);
         }
-        setTimeout(poll, 1500);
       };
-      setTimeout(poll, 1500);
+      setTimeout(() => void poll(), 1500);
     } catch (e: any) {
       setIngestError(e.response?.data?.detail || (e as Error).message || '提交失败');
       setIsIngesting(false);
@@ -590,7 +602,7 @@ export default function MemoryAgentPage() {
                     {ingestSourceType === 'audio' && '音频：上传后走语音转写。'}
                     {ingestSourceType === 'text' && '文本：支持 TXT/MD 等；与 URL 二选一。'}
                     {ingestSourceType === 'document' &&
-                      '文档：支持 PDF、Office、TXT、Markdown 等；当前后端对二进制格式按 UTF-8 解析，复杂版式 PDF 建议后续接专用解析服务。'}
+                      '文档：后端支持 txt/md/csv（UTF-8）、docx、PDF（可选中文字层）。旧版 .doc、扫描版 PDF、Excel/PPT 等尚未解析。'}
                   </p>
                 </div>
 

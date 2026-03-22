@@ -80,18 +80,18 @@ npm run build
 
 ### netlify.toml 与 API（重要）
 
-- **不要**在 `netlify.toml` 里配置 `[[redirects]] from="/api/*"` 做边缘代理（易超时 → **502 Application failed to respond**）。
+- **应使用** `netlify.toml` 里 `[[redirects]] from="/api/*"` **边缘代理**到 Railway（`status = 200`）。请求**不经过** Next.js Serverless 函数，可避免免费版 **约 10s 函数超时** → 轮询 `GET /memory/ingest/...`、大文件上传时出现 **502 `Application failed to respond`**。
 - **不要**使用 `/* → /index.html` 作为 SPA 回退（会破坏 Next.js App Router）。
-- API 流量走 **`next.config.js` 的 `rewrites`**：由 **Next 运行时**把 `/api/*` 转发到 `RAILWAY_API_ORIGIN`（默认 Railway），**浏览器始终请求同源** `/api/v1/...`，因此：
-  - **无**浏览器跨域，**不依赖**后端 CORS；
-  - 轮询 `getIngestStatus`、上传等不再经 Netlify 边缘代理。
+- **不要**再使用 `app/api/v1/.../route.ts` 做服务端 fetch 代理（会与上述策略重复，且易触发 Serverless 超时）。
+- **本地开发**：`next.config.js` 的 `rewrites` 把 `/api/v1/*` 转到 `RAILWAY_API_ORIGIN` 或 `http://127.0.0.1:8000`；**生产**由 Netlify 边缘规则处理。
+- **浏览器**仍请求同源 `/api/v1/...`，一般**无**跨域问题；若 Railway 宕机仍可能 502，需看 Railway 日志。
 
 ### 环境变量配置
 
 在 Netlify → Site settings → Environment variables：
 
 1. **删除**（若存在）`NEXT_PUBLIC_API_URL` 指向 Railway 的绝对地址——否则会强制 axios 跨域直连，重新出现 **CORS + 502** 组合问题。
-2. **可选**：`RAILWAY_API_ORIGIN=https://你的服务.up.railway.app`（与 `next.config.js` 一致，覆盖默认）。
+2. **生产**：`netlify.toml` 里 `[[redirects]]` 的 Railway 主机名须与当前部署一致；改 Railway 域名后请同步修改并重新部署。本地开发可在 `.env.local` 设 `RAILWAY_API_ORIGIN`（与 `next.config.js` rewrites 一致）。
 
 本地开发连本机后端：在项目根 `.env.local` 中：
 
@@ -161,7 +161,8 @@ images = {
 ### 问题：构建失败
 
 **检查点**：
-```bashn# 本地测试构建
+```bash
+# 本地测试构建
 npm run build
 
 # 检查 Node 版本

@@ -253,7 +253,7 @@ const mockAgentStatus: AgentConfigStatus = {
 };
 
 // ===== API实现 =====
-const USE_MOCK = true; // 设置为false时连接真实后端
+const USE_MOCK = false; // 设置为false时连接真实后端
 
 async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
   if (USE_MOCK) {
