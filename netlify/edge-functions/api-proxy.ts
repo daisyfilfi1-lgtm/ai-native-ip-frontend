@@ -9,13 +9,25 @@
 // Railway 后端地址
 const RAILWAY_API = "https://ai-native-ip-production.up.railway.app";
 
-// 允许的前端域名
+// 允许的前端域名（生产环境应收紧）
 const ALLOWED_ORIGINS = [
   "https://ai-native-ip.netlify.app",
+];
+
+// 开发环境额外允许的域名
+const DEV_ORIGINS = [
   "http://localhost:3000",
   "http://localhost:8888",
   "https://localhost:3000",
 ];
+
+// 根据环境判断
+const IS_PRODUCTION = !Deno.env.get("NETLIFY_DEV") && 
+                      !Deno.env.get("NODE_ENV")?.includes("dev");
+
+const EFFECTIVE_ALLOWED_ORIGINS = IS_PRODUCTION 
+  ? ALLOWED_ORIGINS 
+  : [...ALLOWED_ORIGINS, ...DEV_ORIGINS];
 
 // 上传文件大小限制 (10MB，与后端一致)
 const MAX_UPLOAD_SIZE = 10 * 1024 * 1024;
@@ -41,12 +53,12 @@ export default async (request: Request): Promise<Response> => {
     return jsonResponse({ error: "Not Found" }, 404);
   }
 
-  // 3. 验证请求来源（可选的安全检查）
+  // 3. 验证请求来源
   const origin = request.headers.get("origin") || "";
-  // 生产环境可以取消注释下面的检查
-  // if (origin && !ALLOWED_ORIGINS.includes(origin)) {
-  //   return jsonResponse({ error: "Forbidden - Invalid origin" }, 403);
-  // }
+  if (origin && !EFFECTIVE_ALLOWED_ORIGINS.includes(origin)) {
+    console.warn(`[Edge] Blocked request from unauthorized origin: ${origin}`);
+    return jsonResponse({ error: "Forbidden - Invalid origin" }, 403);
+  }
 
   // 4. 特殊处理文件上传请求（仅 /upload，不包括 /ingest）
   if (path.includes("/upload")) {
@@ -184,12 +196,17 @@ async function proxyToRailway(
 function handleCorsPreflight(request: Request): Response {
   const origin = request.headers.get("origin") || "";
   
+  // 验证来源是否允许
+  if (origin && !EFFECTIVE_ALLOWED_ORIGINS.includes(origin)) {
+    return new Response(null, { status: 403 });
+  }
+  
   return new Response(null, {
     status: 204,
     headers: {
-      "Access-Control-Allow-Origin": ALLOWED_ORIGINS.includes(origin) ? origin : "*",
+      "Access-Control-Allow-Origin": EFFECTIVE_ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With, X-API-Key",
       "Access-Control-Max-Age": "86400",
     },
   });
