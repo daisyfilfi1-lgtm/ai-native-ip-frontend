@@ -26,17 +26,29 @@ import type {
 // 使用相对路径，让 Netlify Edge Function 代理请求到 Railway
 // 避免浏览器直接跨域请求 Railway 导致的 CORS 和超时问题
 const API_BASE_URL = '/api/v1';
+
+// API 密钥（从环境变量读取）
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY || '';
+
 console.log('[API] Base URL:', API_BASE_URL, '(via Netlify Edge Function)');
+console.log('[API] API Key configured:', API_KEY ? 'Yes' : 'No');
 
 class ApiClient {
   private client: AxiosInstance;
 
   constructor() {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    // 添加 API Key（如果配置了）
+    if (API_KEY) {
+      headers['X-API-Key'] = API_KEY;
+    }
+    
     this.client = axios.create({
       baseURL: API_BASE_URL,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       timeout: 30000,
     });
 
@@ -110,14 +122,26 @@ class ApiClient {
         formData.append('ip_id', ipId);
         formData.append('file', file);
         
+        // 准备 headers，包含 API Key
+        const headers: Record<string, string> = {};
+        if (API_KEY) {
+          headers['X-API-Key'] = API_KEY;
+        }
+        
         const response = await this.client.post<MemoryUploadResponse>('/memory/upload', formData, {
           timeout: 60000,
           maxContentLength: 10 * 1024 * 1024,
           maxBodyLength: 10 * 1024 * 1024,
+          headers,
           transformRequest: [
             (data, headers) => {
               if (data instanceof FormData) {
+                // 保留 X-API-Key，只删除 Content-Type
+                const apiKey = headers['X-API-Key'];
                 delete headers['Content-Type'];
+                if (apiKey) {
+                  headers['X-API-Key'] = apiKey;
+                }
               }
               return data;
             },

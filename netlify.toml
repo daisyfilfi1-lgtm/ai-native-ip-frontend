@@ -5,8 +5,10 @@
 [build.environment]
   NODE_VERSION = "18"
   NEXT_TELEMETRY_DISABLED = "1"
-  # 禁用 API 模式变量，避免与 Edge Functions 冲突
-  # NEXT_PUBLIC_API_MODE = "edge"
+  # ⚠️ API 密钥：不要在代码库中设置真实值！
+  # 请在 Netlify Dashboard → Site settings → Environment variables 中设置:
+  # NEXT_PUBLIC_API_KEY = your-secret-key-here
+  # 开发环境可以在 .env.local 中设置
 
 # ─────────────────────────────────────────────
 # Edge Functions 配置
