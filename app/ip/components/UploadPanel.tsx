@@ -35,22 +35,48 @@ export function UploadPanel({ ipId, onUploadComplete }: UploadPanelProps) {
     setUploading(true);
     setError('');
     const names: string[] = [];
+    const failedFiles: string[] = [];
 
     for (const file of files) {
       try {
-        await api.uploadMemoryFile(ipId, file);
+        // 1. 上传文件
+        const uploadResult = await api.uploadMemoryFile(ipId, file);
+        
+        // 2. 创建录入任务（关键！之前缺少这步导致400错误）
+        const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
+        const sourceType = ['mp4', 'avi', 'mov', 'webm'].includes(fileExtension) ? 'video' :
+                          ['mp3', 'wav', 'ogg', 'm4a'].includes(fileExtension) ? 'audio' :
+                          'document';
+        
+        await api.ingestMemory({
+          ip_id: ipId,
+          source_type: sourceType,
+          local_file_id: uploadResult.file_id,
+          title: file.name,
+        });
+        
         names.push(file.name);
-      } catch (e) {
-        setError(`上传失败: ${file.name}`);
-        console.error(e);
+      } catch (e: any) {
+        console.error(`上传/录入失败: ${file.name}`, e);
+        failedFiles.push(file.name);
+        
+        // 显示详细错误信息
+        const errorMsg = e?.response?.data?.detail || e?.message || '未知错误';
+        setError(`${file.name}: ${errorMsg}`);
       }
     }
 
     setUploadedNames(names);
     setUploading(false);
     
-    if (names.length > 0 && onUploadComplete) {
+    // 只有全部成功才调用 onUploadComplete
+    if (names.length > 0 && failedFiles.length === 0 && onUploadComplete) {
       onUploadComplete();
+    }
+    
+    // 如果有部分失败，显示汇总
+    if (failedFiles.length > 0 && failedFiles.length !== files.length) {
+      setError(`${failedFiles.length} 个文件处理失败，${names.length} 个成功`);
     }
   };
 
