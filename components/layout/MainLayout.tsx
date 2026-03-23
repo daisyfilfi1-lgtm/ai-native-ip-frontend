@@ -16,8 +16,8 @@ export function MainLayout({ children, title, className }: MainLayoutProps) {
       {/* Sidebar */}
       <Sidebar />
 
-      {/* Main content */}
-      <div className="ml-64 min-h-screen flex flex-col">
+      {/* Main content：isolate 避免侧栏子项溢出时与主区命中区域重叠 */}
+      <div className="ml-64 min-h-screen flex flex-col relative isolate">
         <Header title={title} />
         
         <main className={cn('flex-1 p-6', className)}>

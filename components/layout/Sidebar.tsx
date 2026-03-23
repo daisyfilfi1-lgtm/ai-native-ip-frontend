@@ -62,7 +62,7 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'w-64 h-screen',
+        'w-64 max-w-[16rem] h-screen overflow-x-hidden',
         'bg-background-secondary border-r border-border',
         'flex flex-col',
         'fixed left-0 top-0 z-40',
