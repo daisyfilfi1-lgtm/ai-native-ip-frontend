@@ -101,6 +101,40 @@ NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api/v1
 
 （仅开发时使用；生产不要设置 `NEXT_PUBLIC_API_URL` 为 Railway URL。）
 
+### ⚠️ 文件上传内存问题（重要）
+
+**问题**：上传小文件（如 11KB）时，Railway 内存突然飙升至 4GB。
+
+**原因**：
+1. 请求可能经过 Next.js Serverless 函数，而非边缘代理
+2. multipart/form-data 在 Serverless 环境中可能导致内存异常
+3. 本地 Embedding 模型意外加载（如果 API 失败）
+
+**解决方案**：
+
+1. **确保浏览器直连 Railway**（已配置在 `netlify.toml`）：
+   ```toml
+   [build.environment]
+     NEXT_PUBLIC_API_DIRECT_ORIGIN = "https://your-app.up.railway.app"
+   ```
+
+2. **验证直连是否生效**：
+   - 浏览器 DevTools → Network → 检查上传请求的 URL
+   - ✅ 正确：`https://your-app.up.railway.app/api/v1/memory/upload`
+   - ❌ 错误：`https://your-site.netlify.app/api/v1/memory/upload`
+
+3. **后端文件大小限制**（已在代码中配置）：
+   - 单文件最大 10MB
+   - 流式分块读取（64KB chunks）
+   - 内存监控日志
+
+4. **禁用本地 Embedding**（Railway 环境变量）：
+   ```
+   LOCAL_EMBEDDING_ENABLED = false
+   ```
+
+更多详情参见 `docs/MEMORY_ISSUE_FIX.md`。
+
 ---
 
 ## 🔧 注意事项

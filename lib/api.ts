@@ -72,7 +72,7 @@ class ApiClient {
 
   // Memory APIs
   async ingestMemory(data: IngestRequest): Promise<IngestResponse> {
-    const maxAttempts = 3;
+    const maxAttempts = 5; // 增加重试
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         const response = await this.client.post<IngestResponse>('/memory/ingest', data);
@@ -84,10 +84,13 @@ class ApiClient {
           status === 502 ||
           status === 503 ||
           status === 504 ||
+          status === 0 ||
           ax.code === 'ECONNABORTED' ||
           ax.code === 'ERR_NETWORK';
         if (retryable && attempt < maxAttempts - 1) {
-          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+          const delay = Math.min(3000, 1000 + attempt * 1000) + Math.random() * 500;
+          console.log(`[ingestMemory] Retry ${attempt + 1}/${maxAttempts} after ${delay.toFixed(0)}ms`);
+          await new Promise((r) => setTimeout(r, delay));
           continue;
         }
         throw err;
@@ -96,26 +99,47 @@ class ApiClient {
     throw new Error('ingestMemory failed');
   }
 
-  /** 上传素材文件，返回 file_id 供 ingest 传入 local_file_id。对网关 502/503/504 与网络错误重试，与轮询 ingest 一致。 */
+  /** 
+   * 上传素材文件，返回 file_id 供 ingest 传入 local_file_id。
+   * 
+   * ⚠️ 重要：为避免内存问题，此上传使用流式传输，并限制文件大小为 10MB。
+   * 如需上传更大文件，请使用分片上传或直传云存储。
+   */
   async uploadMemoryFile(ipId: string, file: File): Promise<MemoryUploadResponse> {
+    // 客户端预检查文件大小（10MB）
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      throw new Error(`文件过大，最大支持 ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+    }
+
     const maxAttempts = 3;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         const formData = new FormData();
         formData.append('ip_id', ipId);
         formData.append('file', file);
+        
         const response = await this.client.post<MemoryUploadResponse>('/memory/upload', formData, {
-          timeout: 120000,
-          maxContentLength: Infinity,
-          maxBodyLength: Infinity,
+          timeout: 60000, // 减少到 60s，避免长时间挂起
+          maxContentLength: 10 * 1024 * 1024, // 明确限制 10MB
+          maxBodyLength: 10 * 1024 * 1024,
+          // 流式上传配置
+          responseType: 'json',
           transformRequest: [
             (data, headers) => {
               if (data instanceof FormData) {
+                // 让浏览器自动设置 Content-Type（包含 boundary）
                 delete headers['Content-Type'];
               }
               return data;
             },
           ],
+          // 上传进度监控（调试用）
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total && progressEvent.total > 10 * 1024 * 1024) {
+              console.warn('[uploadMemoryFile] 检测到异常大的上传数据:', progressEvent.total);
+            }
+          },
         });
         return response.data;
       } catch (err) {
@@ -142,11 +166,11 @@ class ApiClient {
    * 状态查询为轻量 GET：较短超时，避免与 Netlify 边缘代理叠加成 30s×N 次控制台风暴。
    */
   async getIngestStatus(taskId: string): Promise<IngestStatus> {
-    const maxAttempts = 5;
+    const maxAttempts = 10; // 增加重试次数
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         const response = await this.client.get<IngestStatus>(`/memory/ingest/${taskId}`, {
-          timeout: 15000,
+          timeout: 20000, // 增加超时
           silentErrorLog: true,
         });
         return response.data;
@@ -157,10 +181,14 @@ class ApiClient {
           status === 502 ||
           status === 503 ||
           status === 504 ||
+          status === 0 || // 网络错误
           ax.code === 'ECONNABORTED' ||
           ax.code === 'ERR_NETWORK';
         if (retryable && attempt < maxAttempts - 1) {
-          await new Promise((r) => setTimeout(r, 500 + attempt * 400));
+          // 指数退避 + 随机抖动
+          const delay = Math.min(3000, 500 + attempt * 500) + Math.random() * 1000;
+          console.log(`[IngestStatus] Retry ${attempt + 1}/${maxAttempts} after ${delay.toFixed(0)}ms (502/网络错误)`);
+          await new Promise((r) => setTimeout(r, delay));
           continue;
         }
         throw err;
