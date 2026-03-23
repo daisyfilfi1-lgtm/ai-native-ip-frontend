@@ -1,3 +1,5 @@
+/// <reference types="@netlify/edge-functions" />
+
 /**
  * Netlify Edge Function - API Proxy
  * 将 /api/* 请求代理到 Railway 后端，解决 CORS 和超时问题
