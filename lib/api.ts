@@ -27,18 +27,33 @@ import type {
 
 class ApiClient {
   private client: AxiosInstance;
+  private apiBaseUrl: string;
 
   constructor() {
+    // 确定 API 基础 URL
+    this.apiBaseUrl = getBrowserApiBaseUrl();
+    console.log('[ApiClient] API Base URL:', this.apiBaseUrl);
+
+    // 判断是相对路径还是绝对 URL
+    const isAbsoluteUrl = this.apiBaseUrl.startsWith('http');
+    
     this.client = axios.create({
-      baseURL: '/api/v1',
+      // 如果是绝对 URL，使用空字符串作为 baseURL
+      // 如果是相对路径，使用 /api/v1
+      baseURL: isAbsoluteUrl ? '' : '/api/v1',
       headers: {
         'Content-Type': 'application/json',
       },
       timeout: 30000,
     });
 
+    // 请求拦截器：如果是绝对 URL，在请求前拼接完整 URL
     this.client.interceptors.request.use((config) => {
-      config.baseURL = getBrowserApiBaseUrl();
+      if (isAbsoluteUrl && config.url && !config.url.startsWith('http')) {
+        // 确保 url 不以 / 开头（避免双斜杠）
+        const url = config.url.startsWith('/') ? config.url.slice(1) : config.url;
+        config.url = `${this.apiBaseUrl.replace(/\/$/, '')}/${url}`;
+      }
       return config;
     });
 
