@@ -4,32 +4,41 @@
 
 [build.environment]
   NODE_VERSION = "18"
-  # 重要：设置此变量让浏览器直接连接 Railway API，绕过 Netlify 边缘代理
-  # 这可以避免文件上传时的内存问题和 502 超时错误
-  NEXT_PUBLIC_API_DIRECT_ORIGIN = "https://ai-native-ip-production.up.railway.app"
+  NEXT_PUBLIC_API_MODE = "edge"
+
+# Edge Functions 配置
+[edge]
+  # 绑定环境变量
+
+# 路由规则：将 /api/* 请求转发到 Edge Function
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api-proxy"
+  status = 200
+  force = true
+
+# 上传专用路由
+[[redirects]]
+  from = "/api/*upload*"
+  to = "/.netlify/functions/api-proxy"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/*ingest*"
+  to = "/.netlify/functions/api-proxy"
+  status = 200
+  force = true
+
+# 健康检查端点
+[[redirects]]
+  from = "/health"
+  to = "/.netlify/functions/api-proxy"
+  status = 200
+  force = true
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-
-# 注意：当 NEXT_PUBLIC_API_DIRECT_ORIGIN 设置后，浏览器会直连 Railway，
-# 以下 redirects 实际上不会用于 API 请求，但保留用于 SEO/其他用途
-[[redirects]]
-  from = "/api/*"
-  to = "https://ai-native-ip-production.up.railway.app/api/:splat"
-  status = 200
-  force = true
-
-# 健康检查端点 - 用于监控
-[[redirects]]
-  from = "/health"
-  to = "https://ai-native-ip-production.up.railway.app/health"
-  status = 200
-  force = true
-
-[dev]
-  command = "npm run dev"
-  targetPort = 3000
-  publish = ".next"
 
 # 静态资源缓存优化
 [[headers]]
@@ -38,11 +47,24 @@
     Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]
-  for = "*.js"
+  for = "/*.js"
   [headers.values]
     Cache-Control = "public, max-age=31536000"
 
 [[headers]]
-  for = "*.css"
+  for = "/*.css"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# API 响应不缓存
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "no-store, no-cache, must-revalidate, proxy-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[dev]
+  command = "npm run dev"
+  targetPort = 3000
+  publish = ".next"

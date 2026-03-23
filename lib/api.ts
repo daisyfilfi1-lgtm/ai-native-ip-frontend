@@ -23,9 +23,10 @@ import type {
   AudioTopicsResult,
 } from '@/types';
 
-// 直接使用 Railway URL - 避免 baseURL 拼接问题
-const API_BASE_URL = 'https://ai-native-ip-production.up.railway.app/api/v1';
-console.log('[API] Base URL:', API_BASE_URL);
+// 使用相对路径，让 Netlify Edge Function 代理请求到 Railway
+// 避免浏览器直接跨域请求 Railway 导致的 CORS 和超时问题
+const API_BASE_URL = '/api/v1';
+console.log('[API] Base URL:', API_BASE_URL, '(via Netlify Edge Function)');
 
 class ApiClient {
   private client: AxiosInstance;
