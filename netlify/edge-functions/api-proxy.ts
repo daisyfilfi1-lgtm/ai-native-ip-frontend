@@ -48,8 +48,8 @@ export default async (request: Request): Promise<Response> => {
   //   return jsonResponse({ error: "Forbidden - Invalid origin" }, 403);
   // }
 
-  // 4. 特殊处理上传请求
-  if (path.includes("/upload") || path.includes("/ingest")) {
+  // 4. 特殊处理文件上传请求（仅 /upload，不包括 /ingest）
+  if (path.includes("/upload")) {
     const validation = validateUploadRequest(request);
     if (!validation.valid) {
       return jsonResponse({ error: validation.error }, validation.status);
@@ -81,7 +81,7 @@ export default async (request: Request): Promise<Response> => {
 };
 
 // ─────────────────────────────────────────────
-// 上传请求验证
+// 上传请求验证（仅用于 /upload 路径）
 // ─────────────────────────────────────────────
 function validateUploadRequest(request: Request): { 
   valid: boolean; 
@@ -101,7 +101,7 @@ function validateUploadRequest(request: Request): {
     }
   }
 
-  // 检查 Content-Type
+  // 检查 Content-Type（上传请求必须是 multipart/form-data）
   const contentType = request.headers.get("content-type") || "";
   if (!contentType.includes("multipart/form-data")) {
     return {
@@ -149,17 +149,16 @@ async function proxyToRailway(
 
   // 设置超时
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
   try {
     const response = await fetch(targetUrl, {
       method: request.method,
       headers,
-      body: request.body,
+      body: request.body,  // 直接转发 body，支持 JSON 和 FormData
       signal: controller.signal,
     });
-
-    clearTimeout(timeout);
+    clearTimeout(timer);
 
     // 构建带 CORS 头的响应
     const corsHeaders = new Headers(response.headers);
@@ -174,7 +173,7 @@ async function proxyToRailway(
     });
 
   } catch (error) {
-    clearTimeout(timeout);
+    clearTimeout(timer);
     throw error;
   }
 }
