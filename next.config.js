@@ -1,24 +1,25 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 禁用SWC，使用Babel编译（解决Node.js 25兼容性问题）
-  swcMinify: false,
-  
   reactStrictMode: true,
   
-  // 图片配置（Netlify 支持 Next.js 图片优化）
+  // 图片配置
   images: {
+    unoptimized: true,  // Netlify 部署需要
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'ai-native-ip-production.up.railway.app',
       },
     ],
-    // 如果使用静态导出，取消下面的注释
-    // unoptimized: true,
   },
   
-  // 本地 next dev：同源 /api/v1 转发到 Railway（或本机 8000）。生产环境 Netlify 用 netlify.toml 边缘代理，不经 Next Serverless，避免 10s 超时 502。
+  // 本地开发时重写 API 请求到 Railway
+  // 生产环境使用 Edge Functions，此配置不生效
   async rewrites() {
+    if (process.env.NODE_ENV === 'production') {
+      return [];
+    }
+    
     const backend = (process.env.RAILWAY_API_ORIGIN || 'http://127.0.0.1:8000').replace(/\/$/, '');
     return [
       {
@@ -28,40 +29,8 @@ const nextConfig = {
     ];
   },
   
-  // 重定向配置
-  async redirects() {
-    return [
-      {
-        source: '/old-path',
-        destination: '/new-path',
-        permanent: true,
-      },
-    ];
-  },
-  
-  // HTTP 头配置
-  async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on',
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN',
-          },
-        ],
-      },
-    ];
-  },
-  
-  // 实验性功能（可选）
-  experimental: {
-    // appDir: true, // Next.js 14 默认启用
-  },
-}
+  // 输出配置
+  output: 'standalone',  // 推荐用于 Netlify
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

@@ -31,6 +31,7 @@
         "npm:eslint@^8.57.0",
         "npm:framer-motion@11",
         "npm:lucide-react@0.363",
+        "npm:netlify-cli@^24.4.0",
         "npm:next@14.2.20",
         "npm:postcss@^8.4.35",
         "npm:react-dom@^18.2.0",
