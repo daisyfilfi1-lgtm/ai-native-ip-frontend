@@ -3,7 +3,7 @@
   publish = ".next"
 
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "20"
   NEXT_TELEMETRY_DISABLED = "1"
   # ⚠️ API 密钥：不要在代码库中设置真实值！
   # 请在 Netlify Dashboard → Site settings → Environment variables 中设置:
