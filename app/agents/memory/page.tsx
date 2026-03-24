@@ -131,6 +131,17 @@ export default function MemoryAgentPage() {
   const [confirmedLabelsJson, setConfirmedLabelsJson] = useState('{}');
   const [labelSubmitError, setLabelSubmitError] = useState('');
 
+  const loadAssetsPreview = async (ipId: string) => {
+    const ip = ipId.trim();
+    if (!ip) return;
+    try {
+      const data = await api.getAssets(ip, 10);
+      setAssetsPreview(data);
+    } catch {
+      // Keep previous preview data if refresh fails.
+    }
+  };
+
   useEffect(() => {
     setIngestIpId((prev) => prev || urlIp);
     setConfigIpId((prev) => prev || urlIp);
@@ -144,6 +155,12 @@ export default function MemoryAgentPage() {
       ingestPollCancelledRef.current = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'ingest') return;
+    if (!ingestIpId.trim()) return;
+    void loadAssetsPreview(ingestIpId);
+  }, [activeTab, ingestIpId]);
 
   const ingestFileAccept = useMemo(() => {
     switch (ingestSourceType) {
@@ -220,7 +237,7 @@ export default function MemoryAgentPage() {
             else if (st.status === 'COMPLETED') {
               setIngestFile(null);
               if (ingestFileInputRef.current) ingestFileInputRef.current.value = '';
-              api.getAssets(ip_id, 5).then(setAssetsPreview).catch(() => {});
+              void loadAssetsPreview(ip_id);
             }
             return;
           }
@@ -650,7 +667,7 @@ export default function MemoryAgentPage() {
               />
               <div className="space-y-3">
                 {ingestIpId && (
-                  <Button variant="ghost" size="sm" onClick={() => api.getAssets(ingestIpId.trim(), 10).then(setAssetsPreview).catch(() => {})}>
+                  <Button variant="ghost" size="sm" onClick={() => void loadAssetsPreview(ingestIpId)}>
                     刷新
                   </Button>
                 )}
