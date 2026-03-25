@@ -20,7 +20,7 @@ export interface AgentConfigStatus {
   // 场景二：仿写爆款相关Agent
   remix: AgentStatus;       // 混剪Agent：解构规则、原创度
   
-  // 场景三：语音创作相关Agent
+  // 场景三：爆款原创相关Agent（含语音输入能力）
   asr: AgentStatus;         // 语音识别：ASR服务状态
   
   // 通用生成Agent
@@ -142,7 +142,7 @@ const mockLibraryItems: LibraryItem[] = [
     },
     createdAt: '2026-03-12T08:00:00Z',
     publishedAt: '2026-03-12T10:00:00Z',
-    generationSource: 'voice',
+    generationSource: 'original',
     agentChain: ['ASR', 'Memory', 'Generation', 'Compliance']
   }
 ];
@@ -192,8 +192,8 @@ const mockGeneratedContents: Record<string, GeneratedContent> = {
     agentChain: ['Remix', 'Memory', 'Generation', 'Compliance'],
     createdAt: '2026-03-18T02:00:00Z'
   },
-  'gen_voice_001': {
-    id: 'gen_voice_001',
+  'gen_original_001': {
+    id: 'gen_original_001',
     title: '30岁创业者的真实感悟',
     hook: '30岁那年，我终于明白了一个道理...',
     story: '30岁之前，我以为成功是线性的。好好学习，考上好大学，找个好工作，然后升职加薪。但30岁那年，公司裁员，我成了被优化掉的那一个。那一刻我才明白，打工永远是在为别人铺路，只有创业才是为自己积累资产。',
@@ -289,7 +289,8 @@ export const creatorApi = {
     if (USE_MOCK) {
       return mockTopics;
     }
-    return apiFetch('/api/creator/topics/recommended');
+    const resp = await apiFetch<{ topics: TopicCard[] }>('/api/creator/topics/recommended');
+    return resp.topics || [];
   },
 
   async refreshTopics(): Promise<TopicCard[]> {
@@ -297,12 +298,13 @@ export const creatorApi = {
       await new Promise(resolve => setTimeout(resolve, 1000));
       return [...mockTopics].sort(() => Math.random() - 0.5);
     }
-    return apiFetch('/api/creator/topics/refresh');
+    const resp = await apiFetch<{ topics: TopicCard[] }>('/api/creator/topics/refresh');
+    return resp.topics || [];
   },
 
-  // 场景一生成：选题 → 生成
-  async generateFromTopic(topicId: string, style: StyleType): Promise<GenerateResult> {
-    console.log('[API] Generate from topic:', { topicId, style });
+  // 场景一第二步：选中推荐选题后生成正文
+  async generateFromTopic(topicId: string, topicTitle: string, style: StyleType): Promise<GenerateResult> {
+    console.log('[API] Generate from topic:', { topicId, topicTitle, style });
     
     if (USE_MOCK) {
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -316,7 +318,7 @@ export const creatorApi = {
     
     return apiFetch('/api/creator/generate/topic', {
       method: 'POST',
-      body: JSON.stringify({ topicId, style })
+      body: JSON.stringify({ topicId, topicTitle, style })
     });
   },
 
@@ -340,24 +342,29 @@ export const creatorApi = {
     });
   },
 
-  // ===== 场景三：语音创作（已升级为爆款原创）=====
-  async generateFromVoice(text: string, style: StyleType): Promise<GenerateResult> {
-    console.log('[API] Generate from voice:', { text, style });
+  // ===== 场景三：爆款原创（支持文本/语音输入）=====
+  async generateFromOriginal(text: string, style: StyleType): Promise<GenerateResult> {
+    console.log('[API] Generate from original:', { text, style });
     
     if (USE_MOCK) {
       await new Promise(resolve => setTimeout(resolve, 1500));
       return {
-        id: 'gen_voice_001',
+        id: 'gen_original_001',
         status: 'completed',
         progress: 100,
         estimatedTime: 0
       };
     }
     
-    return apiFetch('/api/creator/generate/voice', {
+    return apiFetch('/api/creator/generate/original', {
       method: 'POST',
       body: JSON.stringify({ text, style })
     });
+  },
+
+  // 兼容旧调用：voice 已重命名为 original
+  async generateFromVoice(text: string, style: StyleType): Promise<GenerateResult> {
+    return this.generateFromOriginal(text, style);
   },
 
   // ===== 场景三：爆款原创（工业化流水线）=====

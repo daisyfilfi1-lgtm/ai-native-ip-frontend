@@ -112,7 +112,7 @@ export default function DashboardPage() {
                 IP创作者工作台
               </h3>
               <p className="text-sm text-foreground-secondary mb-4">
-                智能选题、仿写爆款、语音创作，AI Agent助你高效产出
+                智能选题、仿写爆款、爆款原创（Original），AI Agent助你高效产出
               </p>
               <div className="flex items-center text-primary-400 text-sm font-medium">
                 开始创作 <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />

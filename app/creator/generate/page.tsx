@@ -68,9 +68,10 @@ function GeneratePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   
-  // 从URL获取参数：id(生成ID) 和 type(生成类型: topic/remix/voice/viral)
+  // 从URL获取参数：id(生成ID) 和 type(生成类型: topic/remix/original，兼容viral)
   const id = searchParams.get('id');
-  const type = searchParams.get('type') as 'topic' | 'remix' | 'voice' | 'viral' | null;
+  const type = searchParams.get('type') as 'topic' | 'remix' | 'original' | 'viral' | null;
+  const normalizedType = type === 'viral' ? 'original' : type;
   
   const [currentStyle, setCurrentStyle] = useState<StyleType>('angry');
   const [isGenerating, setIsGenerating] = useState(true);
@@ -487,7 +488,7 @@ function GeneratePageContent() {
             {/* Sidebar */}
             <div className="space-y-4">
               {/* 爆款原创特殊展示 */}
-              {type === 'viral' && content.viralElements && (
+              {normalizedType === 'original' && content.viralElements && (
                 <Card>
                   <div className="p-4">
                     <h3 className="font-semibold text-foreground mb-3">🎯 八大爆款元素</h3>
@@ -502,7 +503,7 @@ function GeneratePageContent() {
                 </Card>
               )}
               
-              {type === 'viral' && content.scriptTemplate && (
+              {normalizedType === 'original' && content.scriptTemplate && (
                 <Card>
                   <div className="p-4">
                     <h3 className="font-semibold text-foreground mb-3">📝 脚本模板</h3>

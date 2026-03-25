@@ -100,7 +100,7 @@ export interface LibraryItem {
   publishedAt?: string;
   
   // Agent相关
-  generationSource?: 'topic' | 'remix' | 'voice';
+  generationSource?: 'topic' | 'remix' | 'voice' | 'original' | 'viral';
   sourceTopicId?: string;
   sourceUrl?: string;               // remix来源
   agentChain?: string[];
@@ -208,7 +208,7 @@ export interface PlatformRule {
 
 // ===== API请求/响应类型 =====
 export interface GenerateRequest {
-  source: 'topic' | 'remix' | 'voice';
+  source: 'topic' | 'remix' | 'voice' | 'original' | 'viral';
   topicId?: string;
   remixUrl?: string;
   voiceText?: string;

@@ -291,7 +291,7 @@ export default function CreatorDashboardPage() {
   const handleGenerateFromTopic = async (topic: TopicCard, style: StyleType) => {
     setGeneratingTopicId(topic.id);
     try {
-      const result = await creatorApi.generateFromTopic(topic.id, style);
+      const result = await creatorApi.generateFromTopic(topic.id, topic.title, style);
       router.push(`/creator/generate?id=${result.id}&type=topic`);
     } catch (error) {
       console.error('Generate failed:', error);
@@ -326,7 +326,7 @@ export default function CreatorDashboardPage() {
         targetDuration: viralConfig.targetDuration,
         style: 'angry'
       });
-      router.push(`/creator/generate?id=${result.id}&type=viral`);
+      router.push(`/creator/generate?id=${result.id}&type=original`);
     } catch (error) {
       console.error('Viral generate failed:', error);
       setIsGeneratingViral(false);
