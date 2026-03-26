@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CreatorLayout } from '@/components/creator/CreatorLayout';
@@ -11,7 +11,7 @@ import { Progress } from '@/components/ui/Progress';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
 import { Input } from '@/components/ui/Input';
 import { creatorApi, type AgentConfigStatus } from '@/lib/api/creator';
-import type { TopicCard, StyleType } from '@/types/creator';
+import type { TopicCard, StyleType, RemixRecommendationItem } from '@/types/creator';
 import { 
   Sparkles, 
   TrendingUp, 
@@ -37,6 +37,9 @@ import {
   Lightbulb
 } from 'lucide-react';
 import Link from 'next/link';
+
+/** 接口仍要求 style 字段；生成侧以 IP 风格画像为准 */
+const DEFAULT_WORKFLOW_STYLE: StyleType = 'angry';
 
 // Agent配置状态组件
 function AgentStatusCard({ 
@@ -92,16 +95,9 @@ function TopicCardComponent({
 }: { 
   topic: TopicCard; 
   index: number;
-  onGenerate: (topic: TopicCard, style: StyleType) => void;
+  onGenerate: (topic: TopicCard) => void;
   isGenerating: boolean;
 }) {
-  const [selectedStyle, setSelectedStyle] = useState<StyleType>('angry');
-  const styles: { value: StyleType; label: string; emoji: string }[] = [
-    { value: 'angry', label: '愤怒', emoji: '🔥' },
-    { value: 'calm', label: '冷静', emoji: '😌' },
-    { value: 'humor', label: '幽默', emoji: '😄' },
-  ];
-
   const scoreColor = topic.score >= 4.8 ? 'text-accent-green' : topic.score >= 4.5 ? 'text-accent-yellow' : 'text-foreground';
 
   return (
@@ -164,33 +160,11 @@ function TopicCardComponent({
             </div>
           </div>
 
-          {/* Style Selection */}
-          <div className="mb-3">
-            <div className="flex gap-1.5">
-              {styles.map(style => (
-                <button
-                  key={style.value}
-                  onClick={() => setSelectedStyle(style.value)}
-                  disabled={isGenerating}
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all",
-                    selectedStyle === style.value
-                      ? "bg-primary-500 text-white"
-                      : "bg-background-tertiary text-foreground-secondary hover:bg-background-elevated"
-                  )}
-                >
-                  <span>{style.emoji}</span>
-                  <span>{style.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Generate Button */}
           <Button 
             className="w-full mt-auto"
             leftIcon={isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            onClick={() => onGenerate(topic, selectedStyle)}
+            onClick={() => onGenerate(topic)}
             isLoading={isGenerating}
             disabled={isGenerating}
           >
@@ -254,8 +228,22 @@ export default function CreatorDashboardPage() {
   
   // 仿写爆款相关
   const [remixUrl, setRemixUrl] = useState('');
-  const [remixStyle, setRemixStyle] = useState<StyleType>('angry');
   const [isRemixing, setIsRemixing] = useState(false);
+  const [remixRecs, setRemixRecs] = useState<RemixRecommendationItem[]>([]);
+  const [remixRecLoading, setRemixRecLoading] = useState(false);
+
+  const loadRemixRecommendations = useCallback(async () => {
+    setRemixRecLoading(true);
+    try {
+      const items = await creatorApi.getRemixRecommendations('1');
+      setRemixRecs(items);
+    } catch (e) {
+      console.error('Remix recommendations failed:', e);
+      setRemixRecs([]);
+    } finally {
+      setRemixRecLoading(false);
+    }
+  }, []);
   
   // 爆款原创相关
   const [viralInputMode, setViralInputMode] = useState<'text' | 'voice' | 'file'>('text');
@@ -271,6 +259,11 @@ export default function CreatorDashboardPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'remix') return;
+    void loadRemixRecommendations();
+  }, [activeTab, loadRemixRecommendations]);
 
   const loadData = async () => {
     try {
@@ -288,10 +281,10 @@ export default function CreatorDashboardPage() {
   };
 
   // 场景一：推荐选题生成
-  const handleGenerateFromTopic = async (topic: TopicCard, style: StyleType) => {
+  const handleGenerateFromTopic = async (topic: TopicCard) => {
     setGeneratingTopicId(topic.id);
     try {
-      const result = await creatorApi.generateFromTopic(topic.id, topic.title, style);
+      const result = await creatorApi.generateFromTopic(topic.id, topic.title, DEFAULT_WORKFLOW_STYLE);
       router.push(`/creator/generate?id=${result.id}&type=topic`);
     } catch (error) {
       console.error('Generate failed:', error);
@@ -304,7 +297,7 @@ export default function CreatorDashboardPage() {
     if (!remixUrl.trim()) return;
     setIsRemixing(true);
     try {
-      const result = await creatorApi.generateFromRemix(remixUrl, remixStyle);
+      const result = await creatorApi.generateFromRemix(remixUrl, DEFAULT_WORKFLOW_STYLE);
       router.push(`/creator/generate?id=${result.id}&type=remix`);
     } catch (error) {
       console.error('Remix failed:', error);
@@ -324,7 +317,7 @@ export default function CreatorDashboardPage() {
         scriptTemplate: viralConfig.scriptTemplate,
         viralElements: viralConfig.viralElements,
         targetDuration: viralConfig.targetDuration,
-        style: 'angry'
+        style: DEFAULT_WORKFLOW_STYLE
       });
       router.push(`/creator/generate?id=${result.id}&type=original`);
     } catch (error) {
@@ -503,6 +496,69 @@ export default function CreatorDashboardPage() {
 
             <Card>
               <div className="p-6 space-y-6">
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <div>
+                      <h4 className="text-sm font-medium text-foreground">低粉爆款推荐（TikHub）</h4>
+                      <p className="text-xs text-foreground-tertiary mt-0.5">
+                        按 IP 画像 + <span className="text-accent-pink/90">TIKHUB_REMIX_EXTRA_KEYWORDS</span> 匹配标题后排序
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      leftIcon={
+                        remixRecLoading ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <RefreshCw className="w-3.5 h-3.5" />
+                        )
+                      }
+                      onClick={() => void loadRemixRecommendations()}
+                      disabled={remixRecLoading}
+                    >
+                      刷新
+                    </Button>
+                  </div>
+                  {remixRecLoading && remixRecs.length === 0 ? (
+                    <div className="flex items-center justify-center py-8 text-foreground-tertiary text-sm">
+                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                      拉取低粉榜…
+                    </div>
+                  ) : remixRecs.length === 0 ? (
+                    <p className="text-sm text-foreground-tertiary py-4 text-center rounded-xl bg-background-tertiary/50 border border-border">
+                      暂无推荐。请确认后端已配置 TIKHUB_API_KEY，且 TikHub 低粉榜接口有数据；关键词仅影响排序与「命中」文案。
+                    </p>
+                  ) : (
+                    <ul className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                      {remixRecs.map((r, idx) => (
+                        <li
+                          key={`${r.url}-${idx}`}
+                          className="flex items-start gap-3 p-3 rounded-xl bg-background-tertiary/80 border border-border"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground line-clamp-2">{r.title}</p>
+                            <p className="text-xs text-foreground-tertiary mt-1 line-clamp-2">{r.reason}</p>
+                          </div>
+                          <Badge variant="primary" size="sm" className="shrink-0">
+                            {r.platform === 'douyin' ? '抖音' : '小红书'}
+                          </Badge>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="shrink-0"
+                            onClick={() => setRemixUrl(r.url)}
+                          >
+                            填入
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
                 {/* URL输入 */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
@@ -519,35 +575,6 @@ export default function CreatorDashboardPage() {
                         className="w-full pl-10 pr-4 py-3 bg-background-tertiary border border-border rounded-xl text-foreground placeholder:text-foreground-muted focus:outline-none focus:border-primary-500/50"
                       />
                     </div>
-                  </div>
-                </div>
-
-                {/* 风格选择 */}
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    生成风格
-                  </label>
-                  <div className="flex gap-3">
-                    {[
-                      { value: 'angry' as StyleType, label: '愤怒', emoji: '🔥', desc: '直击痛点，引发共鸣' },
-                      { value: 'calm' as StyleType, label: '冷静', emoji: '😌', desc: '理性分析，建立专业感' },
-                      { value: 'humor' as StyleType, label: '幽默', emoji: '😄', desc: '轻松有趣，拉近距离' },
-                    ].map(style => (
-                      <button
-                        key={style.value}
-                        onClick={() => setRemixStyle(style.value)}
-                        className={cn(
-                          "flex-1 p-4 rounded-xl border text-left transition-all",
-                          remixStyle === style.value
-                            ? "border-primary-500 bg-primary-500/10"
-                            : "border-border bg-background-tertiary hover:border-border-hover"
-                        )}
-                      >
-                        <div className="text-2xl mb-2">{style.emoji}</div>
-                        <div className="font-medium text-foreground mb-1">{style.label}</div>
-                        <div className="text-xs text-foreground-secondary">{style.desc}</div>
-                      </button>
-                    ))}
                   </div>
                 </div>
 

@@ -4,6 +4,14 @@
 // ===== 样式类型 =====
 export type StyleType = 'angry' | 'calm' | 'humor';
 
+// ===== 仿写推荐（TikHub 低粉榜 + 关键词 / 小红书话题）=====
+export interface RemixRecommendationItem {
+  url: string;
+  title: string;
+  platform: 'douyin' | 'xiaohongshu';
+  reason: string;
+}
+
 // ===== 选题卡片 =====
 // 对应Agent：Strategy Agent输出
 export interface TopicCard {

@@ -1,7 +1,14 @@
 // 创作者工作台API
 // 对应后台：7-Agent工作流系统
 
-import { TopicCard, GeneratedContent, LibraryItem, AnalyticsMetrics, StyleType } from '@/types/creator';
+import {
+  TopicCard,
+  GeneratedContent,
+  LibraryItem,
+  AnalyticsMetrics,
+  StyleType,
+  RemixRecommendationItem,
+} from '@/types/creator';
 import { getApiOriginOrEmpty } from '@/lib/apiBaseUrl';
 
 // ===== Agent配置状态类型 =====
@@ -255,17 +262,25 @@ const mockAgentStatus: AgentConfigStatus = {
 // ===== API实现 =====
 const USE_MOCK = false; // 设置为false时连接真实后端
 
+/** 与 lib/api.ts 一致：Railway 生产环境依赖 X-API-Key（须与后端 API_KEY 相同） */
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY || '';
+
 async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
   if (USE_MOCK) {
     throw new Error('Mock mode: API not implemented');
   }
-  
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers as Record<string, string> | undefined),
+  };
+  if (API_KEY) {
+    headers['X-API-Key'] = API_KEY;
+  }
+
   const response = await fetch(`${getApiOriginOrEmpty()}${endpoint}`, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
+    headers,
   });
   
   if (!response.ok) {
@@ -282,6 +297,25 @@ export const creatorApi = {
       return mockAgentStatus;
     }
     return apiFetch('/api/creator/agent-status');
+  },
+
+  /** 仿写 Tab：抖音低粉爆款（关键词匹配）+ 可选小红书话题笔记 */
+  async getRemixRecommendations(ipId: string = '1'): Promise<RemixRecommendationItem[]> {
+    if (USE_MOCK) {
+      await new Promise((r) => setTimeout(r, 400));
+      return [
+        {
+          url: 'https://www.douyin.com/',
+          title: '示例：配置 TIKHUB_API_KEY 后替换为真实推荐',
+          platform: 'douyin',
+          reason: 'Mock',
+        },
+      ];
+    }
+    const resp = await apiFetch<{ items: RemixRecommendationItem[] }>(
+      `/api/creator/remix/recommendations?ipId=${encodeURIComponent(ipId)}`
+    );
+    return resp.items || [];
   },
 
   // ===== 场景一：推荐选题 =====
