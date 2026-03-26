@@ -11,7 +11,6 @@ import {
   Loader2, 
   RefreshCw,
   Brain,
-  GitBranch,
   Sparkles,
   Search,
   Layers,
@@ -22,7 +21,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { IP } from '@/types';
-import { MemorySearchPanel, MemoryConsolidationPanel, GraphRAGPanel, MultimodalPanel, ContentGeneratorPanel, UploadPanel } from '../components';
+import { MemorySearchPanel, MemoryConsolidationPanel, MultimodalPanel, ContentGeneratorPanel, UploadPanel } from '../components';
 
 export default function IPDetailPage() {
   const params = useParams();
@@ -136,10 +135,6 @@ export default function IPDetailPage() {
             <Layers className="w-4 h-4 mr-2" />
             记忆管理
           </TabsTrigger>
-          <TabsTrigger value="graph">
-            <GitBranch className="w-4 h-4 mr-2" />
-            知识图谱
-          </TabsTrigger>
           <TabsTrigger value="multimodal">
             <Sparkles className="w-4 h-4 mr-2" />
             多模态
@@ -166,11 +161,6 @@ export default function IPDetailPage() {
         {/* 记忆管理 */}
         <TabsContent value="consolidation">
           <MemoryConsolidationPanel ipId={ipId} />
-        </TabsContent>
-
-        {/* 知识图谱 */}
-        <TabsContent value="graph">
-          <GraphRAGPanel ipId={ipId} />
         </TabsContent>
 
         {/* 多模态 */}

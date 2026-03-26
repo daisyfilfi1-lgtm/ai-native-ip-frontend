@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { creatorApi } from '@/lib/api/creator';
-import type { GeneratedContent, StyleType } from '@/types/creator';
+import type { GeneratedContent } from '@/types/creator';
 import { 
   Sparkles, 
   CheckCircle2, 
@@ -34,12 +34,6 @@ interface SectionConfig {
   color: string;
   description: string;
 }
-
-const styles: { value: StyleType; label: string; emoji: string; color: string; desc: string }[] = [
-  { value: 'angry', label: '愤怒', emoji: '🔥', color: 'from-red-500 to-orange-500', desc: '直击痛点，情绪爆发' },
-  { value: 'calm', label: '冷静', emoji: '😌', color: 'from-blue-500 to-cyan-500', desc: '理性分析，建立专业' },
-  { value: 'humor', label: '幽默', emoji: '😄', color: 'from-yellow-500 to-amber-500', desc: '轻松有趣，拉近距离' },
-];
 
 const sectionLabels: Record<string, SectionConfig> = {
   hook: { 
@@ -73,7 +67,6 @@ function GeneratePageContent() {
   const type = searchParams.get('type') as 'topic' | 'remix' | 'original' | 'viral' | null;
   const normalizedType = type === 'viral' ? 'original' : type;
   
-  const [currentStyle, setCurrentStyle] = useState<StyleType>('angry');
   const [isGenerating, setIsGenerating] = useState(true);
   const [progress, setProgress] = useState(0);
   const [content, setContent] = useState<GeneratedContent | null>(null);
@@ -120,11 +113,6 @@ function GeneratePageContent() {
       // 调用API获取生成内容
       const data = await creatorApi.getGeneratedContent(id!);
       
-      // 设置当前风格
-      if (data.style) {
-        setCurrentStyle(data.style);
-      }
-      
       // 延迟显示结果，让用户看到动画
       setTimeout(() => {
         setProgress(100);
@@ -135,31 +123,6 @@ function GeneratePageContent() {
     } catch (err) {
       console.error('Failed to load content:', err);
       setError('生成内容加载失败，请重试');
-      setIsGenerating(false);
-    }
-  };
-
-  const handleStyleChange = async (style: StyleType) => {
-    if (style === currentStyle) return;
-    
-    setCurrentStyle(style);
-    setIsGenerating(true);
-    setProgress(0);
-    setContent(null);
-    
-    // 使用当前ID重新生成
-    try {
-      const data = await creatorApi.getGeneratedContent(id!);
-      setTimeout(() => {
-        setProgress(100);
-        setContent({
-          ...data,
-          style
-        });
-        setIsGenerating(false);
-      }, 1500);
-    } catch (err) {
-      setError('切换风格失败');
       setIsGenerating(false);
     }
   };
@@ -276,35 +239,7 @@ function GeneratePageContent() {
               : type === 'topic' ? '基于推荐选题生成' : type === 'remix' ? '基于竞品仿写' : '基于语音扩写'}
           </p>
         </div>
-        {!isGenerating && content && (
-          <div className="flex items-center gap-2">
-            <Badge variant="primary" size="sm">
-              {styles.find(s => s.value === currentStyle)?.emoji} {styles.find(s => s.value === currentStyle)?.label}
-            </Badge>
-          </div>
-        )}
       </div>
-
-      {/* Style Selector - only show when not generating */}
-      {!isGenerating && content && (
-        <div className="flex gap-3 mb-6">
-          {styles.map((style) => (
-            <button
-              key={style.value}
-              onClick={() => handleStyleChange(style.value)}
-              className={cn(
-                'flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all',
-                currentStyle === style.value
-                  ? `bg-gradient-to-r ${style.color} text-white shadow-lg`
-                  : 'bg-background-tertiary text-foreground-secondary hover:text-foreground'
-              )}
-            >
-              <span>{style.emoji}</span>
-              <span>{style.label}</span>
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* Generation Animation or Content */}
       <AnimatePresence mode="wait">

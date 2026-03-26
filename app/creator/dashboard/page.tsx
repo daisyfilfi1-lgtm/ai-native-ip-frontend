@@ -571,7 +571,7 @@ export default function CreatorDashboardPage() {
                         type="text"
                         value={remixUrl}
                         onChange={(e) => setRemixUrl(e.target.value)}
-                        placeholder="粘贴抖音/视频号/小红书链接..."
+                        placeholder="粘贴抖音/视频号/小红书链接（含 xhslink.com 短链）…"
                         className="w-full pl-10 pr-4 py-3 bg-background-tertiary border border-border rounded-xl text-foreground placeholder:text-foreground-muted focus:outline-none focus:border-primary-500/50"
                       />
                     </div>
